@@ -1,0 +1,483 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Frases do Coração - Sobre o App</title>
+    
+    <link href="assets/fontawesome/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/estilo-global.css">
+
+<script src="assets/js/config-global.js"></script>
+    
+    <script>
+    (function() {
+        // Busca a preferência salva (padrão 100% se não existir)
+        const fonteSalva = localStorage.getItem('appFontePerc') || '100';
+        
+        // Calcula o valor em pixels (16px * percentagem)
+        const tamanhoCalculado = (fonteSalva / 100) * 16;
+        
+        // Aplica imediatamente ao root antes da página renderizar (evita o "pulo" visual)
+        document.documentElement.style.setProperty('--fonte-base', tamanhoCalculado + 'px');
+    })();
+</script>
+    <script>
+        // --------------------------------
+        // VARIÁVEIS DE CONFIGURAÇÃO E DADOS
+        // --------------------------------
+        const themeKey = 'appTheme';
+        const corKey = 'appCorDestaque';
+        const fundoKey = 'appCorFundo';
+        const corTextoKey = 'appCorTexto';
+        const corPadrao = '#e91e63'; 
+        const fundoPadrao = '#eef2f5'; 
+        const corTextoPadrao = '#1c274b'; 
+        
+        // Chaves de Feedback (Consistente com outras telas)
+        const KEY_VIBRACAO = 'prefVibracao';
+        const KEY_SOM = 'prefSomClique';
+        
+        /** Aplica as configurações de tema e cor salvas no armazenamento local. */
+        function loadSettings() {
+            const savedTheme = localStorage.getItem(themeKey);
+            const savedDestaque = localStorage.getItem(corKey);
+            const savedFundo = localStorage.getItem(fundoKey);
+            const savedTexto = localStorage.getItem(corTextoKey);
+            
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            let isDarkMode = (savedTheme === 'dark') || (!savedTheme && prefersDark);
+            
+            if (document.body) {
+                if (isDarkMode) {
+                    document.body.classList.add('theme-escuro');
+                } else {
+                    document.body.classList.remove('theme-escuro');
+                }
+            }
+            
+            const finalFundo = savedFundo || (isDarkMode ? '#121212' : fundoPadrao);
+            const finalTexto = savedTexto || (isDarkMode ? '#f0f0f0' : corTextoPadrao);
+
+            document.documentElement.style.setProperty('--cor-destaque', savedDestaque || corPadrao);
+            document.documentElement.style.setProperty('--cor-fundo-principal', finalFundo);
+            document.documentElement.style.setProperty('--cor-texto-principal', finalTexto);
+        }
+        
+        loadSettings();
+    </script>
+
+    <style>
+        /* -------------------------------- */
+        /* ESTILOS BASE (Mantenha a consistência) */
+        /* -------------------------------- */
+        @font-face {
+            font-family: 'Nunito';
+            src: url('assets/fontes/Nunito-VariableFont_wght.ttf') format('truetype');
+            font-weight: 100 900;
+        }
+
+        :root {
+            --cor-fundo-principal: #eef2f5; --cor-texto-principal: #1c274b; --cor-card-fundo: #ffffff; --cor-destaque: #e91e63;
+            --cor-sombra: rgba(28, 39, 75, 0.15); --cor-glass-fundo: rgba(255, 255, 255, 0.25); --cor-glass-borda: rgba(255, 255, 255, 0.7);
+            --cor-particula-1: var(--cor-destaque); --cor-particula-2: var(--cor-texto-principal); --fonte-base: 16px; --borda-raio: 1.5rem; --duracao-animacao: 0.5s;
+        }
+        .theme-escuro {
+            --cor-fundo-principal: #121212; --cor-texto-principal: #f0f0f0; --cor-card-fundo: #1e1e1e; --cor-sombra: rgba(0, 0, 0, 0.5);
+            --cor-glass-fundo: rgba(255, 255, 255, 0.05); --cor-glass-borda: rgba(255, 255, 255, 0.15); --cor-particula-1: var(--cor-destaque); 
+            --cor-particula-2: var(--cor-texto-principal); 
+        }
+
+        /* Reset e Base */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { font-size: var(--fonte-base); }
+        body { font-family: 'Nunito', sans-serif; background-color: var(--cor-fundo-principal); color: var(--cor-texto-principal); min-height: 100vh; transition: background-color var(--duracao-animacao), color var(--duracao-animacao); padding-top: 5rem; padding-bottom: 3rem; }
+        .container { width: 100%; max-width: 100%; margin: 0 auto; padding: 1.5rem; position: relative; z-index: 10; }
+        
+        /* Fundo Animado */
+        .fundo-animado { position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; z-index: -1; }
+        .fundo-animado::before, .fundo-animado::after { content: ''; position: absolute; width: 15rem; height: 15rem; border-radius: 50%; opacity: 0.3; animation: flutuar 20s infinite ease-in-out; pointer-events: none; }
+        .fundo-animado::before { background-color: var(--cor-particula-1); top: 10vh; left: 5vw; }
+        .fundo-animado::after { background-color: var(--cor-particula-2); bottom: 15vh; right: 5vw; animation-delay: -10s; }
+        @keyframes flutuar { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(15vw, 15vh) scale(1.1); } }
+        
+        /* Cabeçalho Fixo */
+        .cabecalho-principal { display: flex; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 95%; padding: 1rem 1.5rem; background-color: var(--cor-fundo-principal); box-shadow: 0 2px 10px var(--cor-sombra); z-index: 50; border-radius: 1.5rem; margin-top: 1rem;}
+        .cabecalho-principal h1 { font-size: 1.75rem; color: var(--cor-destaque); font-weight: 800; position: absolute; left: 50%; transform: translateX(-50%); }
+        .btn-voltar { background: none; border: none; color: var(--cor-texto-principal); font-size: 1.5rem; cursor: pointer; padding: 0.5rem; border-radius: 50%; transition: all 0.2s; }
+        
+        /* Ripple Effect */
+        .ripple {position: relative;overflow: hidden;}
+        .ripple-effect {position: absolute;border-radius: 50%;transform: scale(0);animation: ripple-anim 0.6s linear;background-color: rgba(255, 255, 255, 0.7);pointer-events: none;}
+        .theme-escuro .ripple-effect {background-color: rgba(255, 255, 255, 0.1);}
+        @keyframes ripple-anim {to {transform: scale(4);opacity: 0;}}
+
+        /* -------------------------------- */
+        /* ESTILOS ESPECÍFICOS DA TELA SOBRE */
+        /* -------------------------------- */
+        
+        .section-info {
+            background: var(--cor-glass-fundo);
+            backdrop-filter: blur(5px);
+            border: 1px solid var(--cor-glass-borda);
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+            margin-bottom: 1.5rem; 
+            box-shadow: 0 4px 12px var(--cor-sombra);
+        }
+
+        #dedicatoria {
+            background: var(--cor-destaque);
+            color: var(--cor-card-fundo);
+            text-align: center;
+            padding: 2rem 1.5rem;
+            border-radius: 1.5rem;
+            margin-bottom: 1.5rem; 
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .section-info h2 {
+            font-size: 1.5rem;
+            color: var(--cor-destaque);
+            border-bottom: 3px solid var(--cor-glass-borda); /* Ajustado para consistência com glass */
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-info h3 {
+            font-size: 1.1rem;
+            color: var(--cor-texto-principal);
+            font-weight: 700;
+            margin-top: 1rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-info p {
+            line-height: 1.6;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+        
+        /* Estilos da Dedicatória */
+        #dedicatoria h3 {
+            color: var(--cor-card-fundo);
+        }
+        #dedicatoria p {
+            color: var(--cor-card-fundo);
+            opacity: 0.9;
+            font-style: italic;
+            font-size: 1.05rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* Lista de Contatos/Redes */
+        .contact-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 1rem;
+        }
+        
+        .contact-list li {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.8rem;
+            font-size: 0.95rem;
+        }
+
+        .contact-list li i {
+            font-size: 1.2rem;
+            width: 2rem;
+            color: var(--cor-destaque);
+        }
+
+        .contact-list li a {
+            color: var(--cor-destaque);
+            text-decoration: none;
+            font-weight: 600;
+            word-break: break-all;
+            display: inline-block;
+            padding: 0.1rem 0.2rem;
+            border-radius: 0.25rem;
+        }
+
+        .contact-section-title {
+             font-size: 1.2rem; 
+             margin-top: 1.5rem; 
+             margin-bottom: 1rem; 
+             color: var(--cor-destaque); 
+             border-bottom: 1px solid var(--cor-glass-borda); 
+             padding-bottom: 0.5rem;
+             display: flex;
+             align-items: center;
+             gap: 8px;
+        }
+        
+        /* --- ESTILOS PARA INFORMAÇÕES LEGAIS/DOAÇÕES --- */
+        .legal-options, .donation-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn-legal {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 1rem;
+            background: var(--cor-glass-fundo);
+            border: 1px solid var(--cor-glass-borda);
+            border-radius: 1rem;
+            color: var(--cor-texto-principal);
+            font-weight: 600;
+            text-align: left;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-legal i {
+            color: var(--cor-destaque);
+            font-size: 1.25rem;
+        }
+
+        .btn-legal span {
+            flex-grow: 1;
+            margin-left: 1rem;
+        }
+        
+        /* Lista de Doação (IBAN/WhatsApp) */
+        .donation-list li {
+            font-size: 1rem;
+            padding: 0.5rem 0;
+            display: block;
+            line-height: 1.4;
+        }
+
+        .donation-list strong {
+            display: block;
+            margin-top: 0.2rem;
+            font-size: 1.1rem;
+            color: var(--cor-destaque);
+            word-break: break-all;
+        }
+        
+        #dedicatoria h3 .fas.fa-gift {
+    color: var(--cor-glass-borda) !important; 
+}
+
+        /* Ícones FA em geral (exceto o header) */
+        .fas, .fab {
+             color: var(--cor-destaque);
+             animation: pulse 3s infinite;
+        }
+
+        /* --- EFEITOS / ANIMAÇÕES --- */
+        @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.1);} }
+        
+        /* Reset para evitar erros de select */
+        :focus, :active, a:focus, a:active, button:focus, button:active, input:focus, input:active, select:focus, select:active, textarea:focus, textarea:active {
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+</head>
+
+<body> 
+    <div class="fundo-animado"></div>
+
+    <header class="cabecalho-principal">
+        <button onclick="window.location.href = 'index.html'" class="btn-voltar ripple" aria-label="Voltar para Início">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h1 id="header-titulo">
+          <i class="fas fa-info-circle"></i>Sobre o App</h1>
+        <div style="width: 2.5rem; visibility: hidden;"></div> 
+    </header>
+
+    <main class="container">
+        
+        <section class="section-info">
+            <h2><i class="fas fa-heart-pulse"></i> O Aplicativo Frases do Coração</h2>
+            <p>O <strong>Frases do Coração</strong> foi criado para ser sua fonte diária de inspiração e reflexão. Nossa missão é oferecer frases de grandes pensadores e dar a você a liberdade de registrar seus próprios pensamentos.</p>
+            <p>Desenvolvido como um projeto pessoal apaixonado, funciona <strong>100% offline</strong>, garantindo acesso instantâneo e total privacidade aos seus dados.</p>
+            <p style="font-size: 0.85rem; opacity: 0.7;"><i class="fas fa-code-branch"></i> Versão: 1.0.0</p>
+        </section>
+
+              <section class="section-info">
+            <h2><i class="fas fa-user-astronaut"></i> Desenvolvedor: Belardino Capessa</h2>
+            <p>O aplicativo Frases do Coração foi inteiramente idealizado e desenvolvido por <strong>Belardino Capessa</strong>.</p>
+            
+            <h3 class="contact-section-title"><i class="fas fa-id-card-alt"></i> Contatos Pessoais</h3>
+            
+            <ul class="contact-list">
+                <li><i class="fas fa-phone-alt"></i> Celular: 939556816 / 958576543</li>
+                <li><i class="fab fa-whatsapp"></i> WhatsApp: <a href="https://wa.me/244939556816" target="_blank" class="ripple">939556816</a></li>
+                <li><i class="fas fa-envelope"></i> E-mail: <a href="mailto:belardinocapessa@gmail.com" class="ripple">belardinocapessa@gmail.com</a></li>
+            </ul>
+
+            <h3 class="contact-section-title"><i class="fas fa-globe"></i> Redes Profissionais</h3>
+            
+            <ul class="contact-list">
+                <li><i class="fab fa-facebook"></i> Facebook: 
+                    <a href="https://www.facebook.com/belardino.capessa.2025?mibextid=rS40aB7S9Ucbxw6v" target="_blank" class="ripple">Belardino Capessa</a>
+                </li>
+                <li><i class="fab fa-linkedin"></i> LinkedIn: 
+                    <a href="https://www.linkedin.com/in/belardino-capessa-5b2196304?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" class="ripple">Perfil Profissional</a>
+                </li>
+                <li><i class="fab fa-github"></i> GitHub: 
+                    <a href="https://github.com/Belardino-Capessa" target="_blank" class="ripple">Belardino-Capessa</a>
+                </li>
+            </ul>
+        </section>
+        
+        <section id="dedicatoria" style="padding: 2.5rem 1.5rem; background: linear-gradient(145deg, var(--cor-destaque), #c2185b);">
+            <i class="fas fa-praying-hands modal-icon" style="color: rgba(255,255,255,0.6); font-size: 3rem;"></i>
+            
+            <h3 style="color: #fff; font-size: 1.6rem; margin-bottom: 1rem;">Gratidão e Fé</h3>
+            <p style="color: #fff; margin-bottom: 2rem; font-weight: 500;">
+                Primeiramente, agradeço a <strong>Deus</strong> pelo dom da vida, pela saúde e pela sabedoria necessária para concluir este projeto. Sem a força divina, nenhum desses códigos faria sentido.
+            </p>
+
+            <div style="width: 50px; height: 2px; background: rgba(255,255,255,0.3); margin: 0 auto 2rem;"></div>
+
+            <i class="fas fa-users modal-icon" style="color: rgba(255,255,255,0.6); font-size: 2.8rem;"></i>
+            <h3 style="color: #fff; font-size: 1.4rem; margin-bottom: 1rem;">Família e Amigos</h3>
+            <p style="color: #fff; margin-bottom: 2rem; opacity: 0.9;">
+                Aos meus <strong>familiares</strong>, que são meu porto seguro e minha base. Aos meus <strong>amigos</strong>, que me incentivaram nos momentos de cansaço e acreditaram no meu potencial como desenvolvedor. Vocês fazem parte de cada vitória.
+            </p>
+
+            <div style="width: 50px; height: 2px; background: rgba(255,255,255,0.3); margin: 0 auto 2rem;"></div>
+
+            <i class="fas fa-heart modal-icon" style="color: #fff; font-size: 3rem; animation: pulse 1.5s infinite;"></i>
+            <h3 style="color: #fff; font-size: 1.4rem; margin-bottom: 1rem;">Dedicatória Especial</h3>
+            <p style="color: #fff; font-style: italic; font-size: 1.1rem; line-height: 1.6;">
+                "Este aplicativo é, acima de tudo, dedicado ao meu grande amor. 
+                Foi graças à minha <strong>querida namorada</strong> que a centelha deste projeto nasceu. 
+                Cada interface, cada cor e cada função foram pensadas para refletir o carinho que você me inspira todos os dias. 
+                Você é a verdadeira alma do <strong>Frases do Coração</strong>."
+            </p>
+        </section>
+        
+        <section class="section-info">
+            <h2><i class="fas fa-hand-holding-heart"></i> Doações e Apoio ao Desenvolvedor</h2>
+            <p>Se você ama o Frases do Coração e gostaria de apoiar o desenvolvimento e futuras melhorias do aplicativo, qualquer contribuição é muito bem-vinda!</p>
+            
+            <ul class="donation-list">
+                <li><i class="fas fa-university"></i> <strong>Transferência Bancária (IBAN):</strong> <p>Banco: BFA (Banco de Fomento Angola)</p>
+                    <strong>AO06 0006 0000 03354451301 13</strong>
+                </li>
+                <li><i class="fab fa-whatsapp"></i> <strong>Outros Métodos (Ex:Pagamento Móvel):</strong> <p>Entre em contacto via WhatsApp para mais informações sobre outros métodos de doação.</p>
+                    <a href="https://wa.me/244939556816" target="_blank" class="btn-legal ripple" style="width: auto; max-width: 250px; justify-content: flex-start;">
+                        <i class="fab fa-whatsapp"></i>
+                        <span>Contactar para Doação</span>
+                    </a>
+                </li>
+            </ul>
+        </section>
+
+        <section class="section-info">
+            <h2><i class="fas fa-gavel"></i> Informações Legais</h2>
+            
+            <div class="legal-options">
+                <a href="politica_privacidade.html" class="btn-legal ripple">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Política de Privacidade</span>
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                
+                <a href="termos.html" class="btn-legal ripple">
+                    <i class="fas fa-scroll"></i>
+                    <span>Termos de Uso</span>
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </div>
+        </section>
+        
+    </main>
+
+    
+    <script>
+        // --------------------------------
+        // FUNÇÕES DE FEEDBACK
+        // --------------------------------
+        
+        function playClickSound() {
+            // Verifica o estado salvo no localStorage
+            const isSomEnabled = localStorage.getItem(KEY_SOM) !== 'false'; 
+            
+            if (isSomEnabled) { 
+                const clickSound = new Audio('assets/sound/click.mp3');
+                clickSound.volume = 0.5;
+                clickSound.play().catch(e => console.log("A reprodução do som foi impedida:", e));
+            }
+        }
+
+        function triggerHapticFeedback(pattern = 20) {
+            const isVibracaoEnabled = localStorage.getItem(KEY_VIBRACAO) !== 'false';
+            if (navigator.vibrate && isVibracaoEnabled) {
+                navigator.vibrate(pattern);
+            }
+        }
+
+        /** Adiciona o efeito Ripple (onda de clique) ao elemento. */
+        function applyRippleEffect(e) {
+            const target = e.currentTarget;
+            
+            // CHAMA VIBRAÇÃO E SOM AO INICIAR O CLIQUE
+            triggerHapticFeedback(20);
+            playClickSound(); 
+            
+            const rect = target.getBoundingClientRect();
+            const oldRipple = target.querySelector('.ripple-effect');
+            if (oldRipple) oldRipple.remove();
+
+            const size = Math.max(rect.width, rect.height);
+            // Garante que e.clientX/Y ou e.touches[0].clientX/Y seja usado
+            const clientX = (e.clientX !== undefined) ? e.clientX : (e.touches && e.touches[0].clientX);
+            const clientY = (e.clientY !== undefined) ? e.clientY : (e.touches && e.touches[0].clientY);
+            
+            if (clientX === undefined || clientY === undefined) return;
+
+            const x = clientX - rect.left - size / 2;
+            const y = clientY - rect.top - size / 2;
+
+            const newRipple = document.createElement('span');
+            newRipple.classList.add('ripple-effect');
+            
+            newRipple.style.width = newRipple.style.height = size + 'px';
+            newRipple.style.left = x + 'px';
+            newRipple.style.top = y + 'px';
+            
+            target.appendChild(newRipple);
+
+            newRipple.addEventListener('animationend', () => {
+                newRipple.remove();
+            });
+        }
+        
+        // --------------------------------
+        // INICIALIZAÇÃO
+        // --------------------------------
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // Seleciona todos os elementos com a classe .ripple (incluindo botões legais e links de contato)
+            document.querySelectorAll('.ripple').forEach(el => {
+                el.addEventListener('mousedown', applyRippleEffect);
+                el.addEventListener('touchstart', applyRippleEffect);
+            });
+        });
+        
+    </script>
+</body>
+</html>

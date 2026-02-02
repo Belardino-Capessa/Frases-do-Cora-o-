@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Minhas Frases</title>
+    
+    <link href="assets/fontawesome/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/estilo-global.css">
+
+<script src="assets/js/config-global.js"></script>
+    
+    <script>
+    (function() {
+        // Busca a preferência salva (padrão 100% se não existir)
+        const fonteSalva = localStorage.getItem('appFontePerc') || '100';
+        
+        // Calcula o valor em pixels (16px * percentagem)
+        const tamanhoCalculado = (fonteSalva / 100) * 16;
+        
+        // Aplica imediatamente ao root antes da página renderizar (evita o "pulo" visual)
+        document.documentElement.style.setProperty('--fonte-base', tamanhoCalculado + 'px');
+    })();
+</script>
+    <script>
+        // --------------------------------
+        // VARIÁVEIS DE CONFIGURAÇÃO E DADOS
+        // --------------------------------
+        const themeKey = 'appTheme';
+        const corKey = 'appCorDestaque';
+        const fundoKey = 'appCorFundo';
+        const corTextoKey = 'appCorTexto';
+        const corPadrao = '#e91e63'; 
+        const fundoPadrao = '#eef2f5'; 
+        const corTextoPadrao = '#1c274b'; 
+        
+        // Chaves de Feedback e Armazenamento
+        const KEY_VIBRACAO = 'prefVibracao';
+        const KEY_SOM = 'prefSomClique';
+        const KEY_FAVORITOS = 'frasesFavoritas';
+        const KEY_CITATIONS = 'minhasCitacoes'; // CHAVE DAS CITAÇÕES PESSOAIS
+        const KEY_EDITING_CITATION = 'editingCitationData';
+        
+        /** Aplica as configurações de tema e cor salvas no localStorage. */
+        function loadSettings() {
+            const savedTheme = localStorage.getItem(themeKey);
+            const savedDestaque = localStorage.getItem(corKey);
+            const savedFundo = localStorage.getItem(fundoKey);
+            const savedTexto = localStorage.getItem(corTextoKey);
+            
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            let isDarkMode = (savedTheme === 'dark') || (!savedTheme && prefersDark);
+            
+            if (document.body) {
+                if (isDarkMode) {
+                    document.body.classList.add('theme-escuro');
+                } else {
+                    document.body.classList.remove('theme-escuro');
+                }
+            }
+            
+            const finalFundo = savedFundo || (isDarkMode ? '#121212' : fundoPadrao);
+            const finalTexto = savedTexto || (isDarkMode ? '#f0f0f0' : corTextoPadrao);
+
+            document.documentElement.style.setProperty('--cor-destaque', savedDestaque || corPadrao);
+            document.documentElement.style.setProperty('--cor-fundo-principal', finalFundo);
+            document.documentElement.style.setProperty('--cor-texto-principal', finalTexto);
+        }
+        
+        loadSettings();
+    </script>
+
+    <style>
+        /* ESTILOS BASE (Mantenha a consistência) */
+        @font-face {
+            font-family: 'Nunito';
+            src: url('assets/fontes/Nunito-VariableFont_wght.ttf') format('truetype');
+            font-weight: 100 900;
+        }
+
+        :root {
+            --cor-fundo-principal: #eef2f5; --cor-texto-principal: #1c274b; --cor-card-fundo: #ffffff; --cor-destaque: #e91e63;
+            --cor-sombra: rgba(28, 39, 75, 0.15); --cor-glass-fundo: rgba(255, 255, 255, 0.25); --cor-glass-borda: rgba(255, 255, 255, 0.7);
+            --cor-particula-1: var(--cor-destaque); --cor-particula-2: var(--cor-texto-principal); --fonte-base: 16px; --borda-raio: 1.5rem; --duracao-animacao: 0.5s;
+        }
+        .theme-escuro {
+            --cor-fundo-principal: #121212; --cor-texto-principal: #f0f0f0; --cor-card-fundo: #1e1e1e; --cor-sombra: rgba(0, 0, 0, 0.5);
+            --cor-glass-fundo: rgba(255, 255, 255, 0.05); --cor-glass-borda: rgba(255, 255, 255, 0.15); --cor-particula-1: var(--cor-destaque); 
+            --cor-particula-2: var(--cor-texto-principal); 
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { font-size: var(--fonte-base); }
+        body { font-family: 'Nunito', sans-serif; background-color: var(--cor-fundo-principal); color: var(--cor-texto-principal); min-height: 100vh; transition: background-color var(--duracao-animacao), color var(--duracao-animacao); padding-top: 5rem; padding-bottom: 3rem; }
+        .container { width: 100%; max-width: 100%; margin: 0 auto; padding: 1.5rem; position: relative; z-index: 10; }
+        .fundo-animado { position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; z-index: -1; }
+        .fundo-animado::before, .fundo-animado::after { content: ''; position: absolute; width: 15rem; height: 15rem; border-radius: 50%; opacity: 0.3; animation: flutuar 20s infinite ease-in-out; pointer-events: none; }
+        .fundo-animado::before { background-color: var(--cor-particula-1); top: 10vh; left: 5vw; }
+        .fundo-animado::after { background-color: var(--cor-particula-2); bottom: 15vh; right: 5vw; animation-delay: -10s; }
+        @keyframes flutuar { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(15vw, 15vh) scale(1.1); } }
+        .cabecalho-principal { display: flex; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 95%; padding: 1rem 1.5rem; background-color: var(--cor-fundo-principal); box-shadow: 0 2px 10px var(--cor-sombra); z-index: 50; border-radius: 1.5rem;
+            margin-top: 1rem;}
+        .cabecalho-principal h1 { font-size: 1.75rem; color: var(--cor-destaque); font-weight: 800; position: absolute; left: 50%; transform: translateX(-50%); }
+        .btn-voltar { background: none; border: none; color: var(--cor-texto-principal); font-size: 1.5rem; cursor: pointer; padding: 0.5rem; border-radius: 50%; transition: all 0.2s; }
+        .ripple {position: relative;overflow: hidden;}
+        .ripple-effect {position: absolute;border-radius: 50%;transform: scale(0);animation: ripple-anim 0.6s linear;background-color: rgba(255, 255, 255, 0.7);pointer-events: none;}
+        .theme-escuro .ripple-effect {background-color: rgba(255, 255, 255, 0.1);}
+        @keyframes ripple-anim {to {transform: scale(4);opacity: 0;}}
+
+        /* ESTILOS ESPECÍFICOS DE CONTEÚDO */
+        .frases-lista { display: flex; flex-direction: column; gap: 1.5rem; padding-top: 1rem; }
+        .frase-card {
+            background: var(--cor-glass-fundo); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); 
+            border: 1px solid var(--cor-glass-borda); box-shadow: 0 0.5rem 2rem 0 rgba(31, 38, 135, 0.1);
+            padding: 1.5rem; border-radius: var(--borda-raio);
+        }
+        .frase-texto { font-size: 1.25rem; font-style: italic; margin-bottom: 0.75rem; line-height: 1.5; }
+        .frase-autor { display: block; text-align: right; font-size: 0.9rem; font-weight: 600; color: var(--cor-texto-principal); opacity: 0.7; padding-bottom: 1rem; border-bottom: 1px dashed var(--cor-glass-borda); }
+
+        /* Ajuste para acomodar mais botões */
+        .frase-acoes { 
+            display: flex; 
+            justify-content: space-between; /* Espaçamento distribuído */
+            padding-top: 1rem; 
+        }
+        .btn-acao { background: none; border: none; color: var(--cor-texto-principal); cursor: pointer; font-size: 1.25rem; padding: 0.5rem; border-radius: 50%; transition: color 0.2s; }
+        .btn-acao:hover { color: var(--cor-destaque); }
+        .btn-favoritar.favoritado { color: var(--cor-destaque); }
+
+        /* Estilo específico para o botão de Editar */
+        .btn-editar { color: #2196f3; } 
+        /* Estilo específico para o botão de Apagar */
+        .btn-apagar { color: #f44336; } 
+
+        #status-message { text-align: center; padding: 40px 0; font-size: 1.1rem; color: var(--cor-texto-principal); opacity: 0.7; }
+        
+        /* Adicione esta regra ao seu bloco <style> no minhas-citacoes.html */
+.frase-categoria {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--cor-destaque); /* Usa a cor principal para destaque */
+    margin-bottom: 0.5rem;
+    opacity: 0.85;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ================== Geral e Reset ================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Nunito', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+:focus, :active, a:focus, a:active, button:focus, button:active, input:focus, input:active, select:focus, select:active, textarea:focus, textarea:active {
+    outline: none;
+    -webkit-tap-highlight-color: transparent;}
+    
+    .fas ,fa{
+    animation: pulse 3s infinite;
+    color: var(--cor-destaque);
+}
+    
+        /* --- EFEITOS / ANIMAÇÕES --- */
+    .fade-out { animation:fadeOut 0.5s ease-in-out forwards; }
+    @keyframes fadeIn { from{opacity:0;transform:scale(0.9);} to{opacity:1;transform:scale(1);} }
+    @keyframes fadeOut { from{opacity:1;} to{opacity:0;visibility:hidden;} }
+    @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.2);} }
+    @keyframes bounce { 0%,80%,100%{transform:scale(0.8);} 40%{transform:scale(1.2);} }
+}
+
+/* Força o Modal a ficar acima de TUDO nesta tela */
+.modal-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 99999 !important; /* Valor absurdo para garantir */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background-color: rgba(0, 0, 0, 0.7) !important;
+}
+
+.modal-content {
+    z-index: 100000 !important;
+    position: relative !important;
+    background: #fff !important; /* Garante que não está transparente */
+    color: #333 !important;
+}
+    </style>
+</head>
+<body> 
+    <div class="fundo-animado"></div>
+
+    <header class="cabecalho-principal">
+        <button onclick="window.location.href = 'index.html'" class="btn-voltar ripple" aria-label="Voltar para Início">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        
+        <h1 id="header-titulo"><i class="fas fa-message"></i> Minhas Frases</h1>
+        
+        <a href="criar.html" class="btn-voltar ripple" aria-label="Adicionar Nova Citação" style="font-size: 1.5rem;">
+            <i class="fas fa-plus"></i>
+        </a>
+    </header>
+
+    <div class="container">
+        <section id="citacoes-lista" class="frases-lista">
+            <p id="status-message">Carregando suas citações...</p>
+        </section>
+    </div>
+</body>
+
+<script>
+    // --------------------------------
+    // JAVASCRIPT
+    // --------------------------------
+    const KEY_HISTORICO = 'historico_frases';
+// ... outras chaves ...
+    
+    // Elementos DOM
+    const dom = {
+        listaFrases: document.getElementById('citacoes-lista'),
+        btnVoltar: document.querySelector('.btn-voltar')
+    };
+    
+    // --------------------------------
+    // FUNÇÕES DE GERENCIAMENTO DE DADOS (LocalStorage)
+    // --------------------------------
+
+    /** Retorna uma lista de objetos salvos no LocalStorage. */
+    function getSavedItems(key) {
+        try {
+            const json = localStorage.getItem(key);
+            return json ? JSON.parse(json) : [];
+        } catch (e) {
+            console.error(`Erro ao carregar dados de ${key}:`, e);
+            return [];
+        }
+    }
+
+    /** Salva a lista atualizada no LocalStorage. */
+    function saveItems(key, items) {
+        try {
+            localStorage.setItem(key, JSON.stringify(items));
+        } catch (e) {
+            console.error(`Erro ao salvar dados em ${key}:`, e);
+        }
+    }
+
+    // --------------------------------
+    // LÓGICA DE ID E FAVORITOS (PADRONIZADA E REUSADA)
+    // --------------------------------
+
+    /** Cria um ID único consistente para a frase, usando a data de criação. */
+    function getFraseId(frase) {
+        if (!frase || !frase.texto) return null;
+        
+        const autorNormalizado = (frase.autor && frase.autor.trim()) || 'Sem Autor';
+        const data = frase.dataCriacao || 'sem_data';
+        
+        return `${frase.texto}-${autorNormalizado}-${data}`;
+    }
+    
+    function addToHistorico(frase) {}
+    
+
+    
+    /** Verifica se uma frase está na lista de favoritos. */
+    function isFavorited(frase) {
+        // Verifica se KEY_FAVORITOS está definida
+        if (typeof KEY_FAVORITOS === 'undefined') return false; 
+        
+        const favoritos = getSavedItems(KEY_FAVORITOS);
+        const idParaBuscar = getFraseId(frase); 
+        if (!idParaBuscar) return false;
+        
+        return favoritos.some(item => getFraseId(item) === idParaBuscar);
+    }
+
+    /** Adiciona ou remove uma frase dos favoritos. */
+    function toggleFavorite(frase) {
+        if (!frase || !frase.texto) return false;
+        if (typeof KEY_FAVORITOS === 'undefined') return false; 
+
+        let favoritos = getSavedItems(KEY_FAVORITOS);
+        const idParaBuscar = getFraseId(frase);
+        if (!idParaBuscar) return false;
+
+        const indiceExistente = favoritos.findIndex(item => getFraseId(item) === idParaBuscar);
+
+        if (indiceExistente !== -1) {
+            favoritos.splice(indiceExistente, 1);
+            saveItems(KEY_FAVORITOS, favoritos);
+            return false;
+        } else {
+            favoritos.push({ ...frase, id: idParaBuscar });
+            saveItems(KEY_FAVORITOS, favoritos);
+            return true;
+        }
+    }
+    
+    // --------------------------------
+    // FUNÇÕES DE FEEDBACK E UI (CORRIGIDAS)
+    // --------------------------------
+
+    function playClickSound() {
+        const isSomEnabled = localStorage.getItem(KEY_SOM) !== 'false'; 
+        if (isSomEnabled) {
+            const clickSound = new Audio('assets/sound/click.mp3');
+            clickSound.volume = 0.5;
+            clickSound.play().catch(e => console.log("A reprodução do som foi impedida:", e));
+        }
+    }
+    
+    function triggerHapticFeedback(pattern = 20) {
+        const isVibracaoEnabled = localStorage.getItem(KEY_VIBRACAO) !== 'false';
+        if (navigator.vibrate && isVibracaoEnabled) {
+            navigator.vibrate(pattern);
+        }
+    }
+
+    function applyRippleEffect(e) {
+        const target = e.currentTarget;
+        
+        // CHAMA VIBRAÇÃO E SOM AO INICIAR O CLIQUE
+        // O ponto crucial é que esta chamada já resolve a falta de vibração no toque/clique.
+        triggerHapticFeedback(20);
+        playClickSound(); 
+        
+        const rect = target.getBoundingClientRect();
+        const oldRipple = target.querySelector('.ripple-effect');
+        if (oldRipple) oldRipple.remove();
+
+        // Correção para obter coordenadas de clique/toque de forma mais robusta
+        const clientX = (e.clientX !== undefined) ? e.clientX : (e.touches && e.touches[0].clientX);
+        const clientY = (e.clientY !== undefined) ? e.clientY : (e.touches && e.touches[0].clientY);
+        
+        if (clientX === undefined || clientY === undefined) return; // Evita erro se não houver coordenadas
+
+        const size = Math.max(rect.width, rect.height);
+        const x = clientX - rect.left - size / 2;
+        const y = clientY - rect.top - size / 2;
+
+        const newRipple = document.createElement('span');
+        newRipple.classList.add('ripple-effect');
+        
+        newRipple.style.width = newRipple.style.height = size + 'px';
+        newRipple.style.left = x + 'px';
+        newRipple.style.top = y + 'px';
+        
+        target.appendChild(newRipple);
+
+        newRipple.addEventListener('animationend', () => {
+            newRipple.remove();
+        });
+    }
+    
+    // --------------------------------
+    // AÇÕES DO CARD
+    // --------------------------------
+
+    
+    // --- FUNÇÕES AUXILIARES DE SUPORTE ---
+
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed"; 
+    textArea.style.opacity = "0";     
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try { 
+        return document.execCommand('copy'); 
+    } catch (err) { 
+        return false; 
+    } finally { 
+        document.body.removeChild(textArea); 
+    }
+}
+
+// --- AÇÕES PRINCIPAIS ---
+
+function handleCopiar(texto, event) {
+    const button = event.currentTarget;
+    const iconeOriginal = button.innerHTML;
+
+    const sucessoCopia = () => {
+        button.innerHTML = '<i class="fas fa-check"></i>'; 
+        triggerHapticFeedback(75);
+        window.CustomModal.show({
+            titulo: "Copiado!",
+            mensagem: "Texto enviado para a área de transferência.",
+            icone: "fa-copy"
+        });
+        setTimeout(() => { button.innerHTML = iconeOriginal; }, 1500);
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(texto).then(sucessoCopia).catch(() => {
+            if(fallbackCopyTextToClipboard(texto)) sucessoCopia();
+        });
+    } else {
+        if(fallbackCopyTextToClipboard(texto)) sucessoCopia();
+    }
+}
+
+function handleFavoritar(fraseJsonString, event) {
+    const button = event.currentTarget;
+    try {
+        // Substituir &quot; por aspas reais antes do parse para evitar erros
+        const frase = JSON.parse(fraseJsonString.replace(/&quot;/g, '"'));
+        const isFavoritado = toggleFavorite(frase); 
+        
+        const icone = button.querySelector('i');
+        button.classList.toggle('favoritado', isFavoritado); 
+        icone.className = isFavoritado ? 'fas fa-heart' : 'far fa-heart';
+
+        triggerHapticFeedback(isFavoritado ? 50 : 25);
+        
+        window.CustomModal.show({
+            titulo: isFavoritado ? "Favoritado!" : "Removido",
+            mensagem: isFavoritado ? "Adicionado aos seus favoritos." : "Removido da sua lista de favoritos.",
+            icone: isFavoritado ? "fa-heart" : "fa-heart-broken"
+        });
+    } catch (e) {
+        console.error("Erro ao favoritar:", e);
+    }
+}
+
+function handlePartilhar(texto, event) {
+    if (navigator.share) {
+        navigator.share({ title: 'Minha Citação', text: texto, url: window.location.href })
+            .then(() => triggerHapticFeedback(50))
+            .catch(error => { if (error.name !== "AbortError") console.log('Erro ao partilhar:', error); });
+    } else {
+        handleCopiar(texto, event);
+        window.CustomModal.show({
+            titulo: "Partilhar",
+            mensagem: "Seu navegador não suporta partilha direta. O texto foi copiado!",
+            icone: "fa-info-circle"
+        });
+    }
+}
+
+/** Lida com a edição de uma citação (Redirecionando para a tela de criação) */
+function handleEditarCitacao(fraseJsonString) {
+    try {
+        const fraseParaEditar = JSON.parse(fraseJsonString.replace(/&quot;/g, '"'));
+        
+        window.CustomModal.show({
+            titulo: "Editar Frase?",
+            mensagem: "Deseja abrir esta frase no editor?",
+            icone: "fa-edit",
+            tipo: "confirm",
+            aoConfirmar: () => {
+                triggerHapticFeedback(40);
+                localStorage.setItem(KEY_EDITING_CITATION, JSON.stringify(fraseParaEditar));
+                window.location.href = 'criar.html';
+            }
+        });
+    } catch (e) {
+        console.error("Erro ao preparar edição:", e);
+    }
+}
+
+/** Lida com a remoção de uma frase específica */
+function handleApagarCitacao(fraseJsonString, event) {
+    const botao = event.currentTarget;
+    
+    window.CustomModal.show({
+        titulo: "Apagar Frase?",
+        mensagem: "Esta ação não pode ser desfeita. Tem certeza?",
+        icone: "fa-trash-alt",
+        tipo: "confirm",
+        aoConfirmar: () => {
+            try {
+                const fraseParaRemover = JSON.parse(fraseJsonString.replace(/&quot;/g, '"'));
+                let citacoes = getSavedItems(KEY_CITATIONS);
+                const idParaBuscar = getFraseId(fraseParaRemover);
+
+                const indice = citacoes.findIndex(item => getFraseId(item) === idParaBuscar);
+
+                if (indice !== -1) {
+                    citacoes.splice(indice, 1);
+                    saveItems(KEY_CITATIONS, citacoes);
+                    
+                    triggerHapticFeedback([50, 20, 50]);
+                    
+                    const cardElement = botao.closest('.frase-card');
+                    if (cardElement) {
+                        cardElement.style.opacity = '0';
+                        cardElement.style.transform = 'scale(0.9) translateX(-20px)';
+                        cardElement.style.transition = 'all 0.4s ease';
+
+                        setTimeout(() => {
+                            cardElement.remove();
+                            if (dom.listaFrases.children.length === 0) renderCitacoes();
+                        }, 400);
+                    }
+                }
+            } catch (e) {
+                console.error("Erro ao apagar:", e);
+            }
+        }
+    });
+}
+    
+    // --------------------------------
+    // RENDERIZAÇÃO
+    // --------------------------------
+    
+    /** Renderiza um card de frase com Categoria e os 5 botões. */
+    function renderFraseCard(frase) {
+        const card = document.createElement('div');
+        card.className = 'frase-card';
+        
+        const isFavorito = isFavorited(frase); 
+
+        // Sanitização Robusta
+        let cleanFraseJson = JSON.stringify(frase);
+        cleanFraseJson = cleanFraseJson.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        cleanFraseJson = cleanFraseJson.replace(/[\n\r\t]/g, ' '); 
+
+        // Sanitização para a string de texto
+        let cleanText = frase.texto;
+        cleanText = cleanText.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        cleanText = cleanText.replace(/[\n\r\t]/g, ' '); 
+
+        const favoriteIconClass = isFavorito ? 'fas' : 'far';
+
+        card.innerHTML = `
+            <span class="frase-categoria">${frase.categoria || 'Sem Categoria'}</span>
+            
+            <p class="frase-texto">${frase.texto}</p>
+            <span class="frase-autor">— ${frase.autor || 'Autor Desconhecido'}</span>
+            
+            <div class="frase-acoes">
+                
+                <button class="btn-acao ripple" onclick="handleCopiar('${cleanText}', event)">
+                    <i class="fas fa-copy"></i>
+                </button>
+                
+                <button class="btn-acao btn-favoritar ripple ${isFavorito ? 'favoritado' : ''}" onclick="handleFavoritar('${cleanFraseJson}', event)">
+                    <i class="${favoriteIconClass} fa-heart"></i>
+                </button>
+                
+                <button class="btn-acao btn-editar ripple" onclick="handleEditarCitacao('${cleanFraseJson}', event)">
+                    <i class="fas fa-edit"></i>
+                </button>
+
+                <button class="btn-acao btn-apagar ripple" onclick="handleApagarCitacao('${cleanFraseJson}', event)">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+
+                <button class="btn-acao ripple" onclick="handlePartilhar('${cleanText}', event)">
+                    <i class="fas fa-share-alt"></i>
+                </button>
+            </div>
+        `;
+        
+        // Aplica o ripple (que chama som e vibração) em todos os botões de ação do card
+        card.querySelectorAll('.ripple').forEach(btn => {
+            btn.addEventListener('mousedown', applyRippleEffect);
+            btn.addEventListener('touchstart', applyRippleEffect);
+        });
+        
+        addToHistorico(frase); 
+
+        return card;
+    }
+
+    /** Carrega e renderiza a lista de frases das Minhas Citações. */
+    function renderCitacoes() {
+        // Verifica se a chave KEY_CITATIONS está definida
+        if (typeof KEY_CITATIONS === 'undefined') {
+             console.error("KEY_CITATIONS não está definida. Não é possível renderizar citações.");
+             dom.listaFrases.innerHTML = "<p id='status-message'>Erro: Chave de armazenamento não definida.</p>";
+             return;
+        }
+
+        const citacoes = getSavedItems(KEY_CITATIONS).reverse();
+        
+        dom.listaFrases.innerHTML = ''; 
+
+        if (citacoes.length === 0) {
+             const msg = document.createElement('p');
+             msg.id = 'status-message';
+             msg.textContent = "Você ainda não criou nenhuma frase. Toque no '+' para começar!";
+             dom.listaFrases.appendChild(msg);
+             return;
+        }
+
+        citacoes.forEach(item => {
+            dom.listaFrases.appendChild(renderFraseCard(item));
+        });
+    }
+    
+  
+    /** Lida com a edição de uma citação (NOVA IMPLEMENTAÇÃO). */
+    function handleEditarCitacao(fraseJsonString, event) {
+        let fraseParaEditar;
+        
+        // 1. Garante feedback visual/tátil imediato
+        triggerHapticFeedback(20);
+        playClickSound();
+
+        try {
+            fraseParaEditar = JSON.parse(fraseJsonString); 
+        } catch (e) {
+            console.error("Erro (JSON.parse) ao processar a frase para editar:", e);
+            alert("Erro interno: Falha ao carregar dados da frase.");
+            return;
+        }
+
+        // 2. Salva a frase completa no localStorage para ser carregada na próxima tela
+        try {
+            localStorage.setItem(KEY_EDITING_CITATION, JSON.stringify(fraseParaEditar));
+            console.log("Dados da frase salvos para edição.");
+        } catch (e) {
+            console.error("Erro ao salvar dados de edição no localStorage:", e);
+            alert("Erro interno: Falha ao preparar a edição.");
+            return;
+        }
+        
+        // 3. Redireciona para a tela de criação (onde a edição será feita)
+        window.location.href = 'criar.html';
+    }
+
+    // --------------------------------
+    // INICIALIZAÇÃO
+    // --------------------------------
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        // Configura os ripples (som e vibração) para o botão Voltar
+        const btnVoltar = document.querySelector('.cabecalho-principal .btn-voltar');
+        if (btnVoltar) {
+            btnVoltar.addEventListener('mousedown', applyRippleEffect);
+            btnVoltar.addEventListener('touchstart', applyRippleEffect);
+        }
+        
+        // Configura o ripple (som e vibração) para o botão Adicionar (+)
+        const btnAdicionar = document.querySelector('a[aria-label="Adicionar Nova Citação"]');
+        if (btnAdicionar) {
+             btnAdicionar.addEventListener('mousedown', applyRippleEffect);
+             btnAdicionar.addEventListener('touchstart', applyRippleEffect);
+        }
+        
+        renderCitacoes(); 
+    });
+    
+</script>
+    
+</body>
+</html>
