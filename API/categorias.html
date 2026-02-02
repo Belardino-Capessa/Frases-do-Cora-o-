@@ -1,0 +1,1969 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Frases do Coração - Categorias</title>
+    
+    <link href="assets/fontawesome/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/estilo-global.css">
+
+<script src="assets/js/config-global.js"></script>
+    
+    <script>
+    (function() {
+        // Busca a preferência salva (padrão 100% se não existir)
+        const fonteSalva = localStorage.getItem('appFontePerc') || '100';
+        
+        // Calcula o valor em pixels (16px * percentagem)
+        const tamanhoCalculado = (fonteSalva / 100) * 16;
+        
+        // Aplica imediatamente ao root antes da página renderizar (evita o "pulo" visual)
+        document.documentElement.style.setProperty('--fonte-base', tamanhoCalculado + 'px');
+    })();
+</script>
+    <script>
+        // --------------------------------
+        // VARIÁVEIS DE CONFIGURAÇÃO E DADOS
+        // --------------------------------
+        const themeKey = 'appTheme';
+        const corKey = 'appCorDestaque';
+        const fundoKey = 'appCorFundo';
+        const corTextoKey = 'appCorTexto';
+        const corPadrao = '#e91e63'; 
+        const fundoPadrao = '#eef2f5'; 
+        const corTextoPadrao = '#1c274b'; 
+        
+        const KEY_VIBRACAO = 'prefVibracao';
+        const KEY_SOM = 'prefSomClique';
+        const KEY_FAVORITOS = 'frasesFavoritas';
+        const KEY_HISTORICO = 'frasesHistorico';
+        
+        // --- NOVAS CHAVES ADICIONADAS ---
+        const KEY_LAYOUT = 'prefLayoutAtivo'; // Para o Ajuste 1
+
+        const FRASES_URL = 'assets/frases/frases.json'; 
+        let allFrasesData = []; 
+        let allCategories = []; // Para armazenar categorias únicas
+        let currentCategory = null; 
+        let currentLayout = localStorage.getItem(KEY_LAYOUT) || 'list'; // Padrão: lista
+        let listaAtualParaLeitura = []; // Variável global para o carrossel
+
+        /** Aplica as configurações de tema e cor salvas no localStorage. */
+        function loadSettings() {
+            const savedTheme = localStorage.getItem(themeKey);
+            const savedDestaque = localStorage.getItem(corKey);
+            const savedFundo = localStorage.getItem(fundoKey);
+            const savedTexto = localStorage.getItem(corTextoKey);
+            
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            let isDarkMode = (savedTheme === 'dark') || (!savedTheme && prefersDark);
+            
+            if (document.body) {
+                if (isDarkMode) document.body.classList.add('theme-escuro');
+                else document.body.classList.remove('theme-escuro');
+            }
+            
+            const finalFundo = savedFundo || (isDarkMode ? '#121212' : fundoPadrao);
+            const finalTexto = savedTexto || (isDarkMode ? '#f0f0f0' : corTextoPadrao);
+
+            document.documentElement.style.setProperty('--cor-destaque', savedDestaque || corPadrao);
+            document.documentElement.style.setProperty('--cor-fundo-principal', finalFundo);
+            document.documentElement.style.setProperty('--cor-texto-principal', finalTexto);
+        }
+        loadSettings();
+    </script>
+
+    <style>
+        /* FONTE ORIGINAL */
+        @font-face {
+            font-family: 'Nunito';
+            src: url('../assets/fontes/Nunito-VariableFont_wght.ttf') format('truetype');
+            font-weight: 100 900;
+        }
+
+        :root {
+            --cor-fundo-principal: #eef2f5; --cor-texto-principal: #1c274b; --cor-card-fundo: #ffffff; --cor-destaque: #e91e63;
+            --cor-sombra: rgba(28, 39, 75, 0.15); --cor-glass-fundo: rgba(255, 255, 255, 0.25); --cor-glass-borda: rgba(255, 255, 255, 0.7);
+            --cor-particula-1: var(--cor-destaque); --cor-particula-2: var(--cor-texto-principal); --fonte-base: 16px; --borda-raio: 1.5rem; --duracao-animacao: 0.5s;
+        }
+        .theme-escuro {
+            --cor-fundo-principal: #121212; --cor-texto-principal: #f0f0f0; --cor-card-fundo: #1e1e1e; --cor-sombra: rgba(0, 0, 0, 0.5);
+            --cor-glass-fundo: rgba(255, 255, 255, 0.05); --cor-glass-borda: rgba(255, 255, 255, 0.15); --cor-particula-1: var(--cor-destaque); 
+            --cor-particula-2: var(--cor-texto-principal); 
+        }
+
+        /* Reset e Body Original */
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+        html { font-size: var(--fonte-base); }
+        body {
+            font-family: 'Nunito', sans-serif; background-color: var(--cor-fundo-principal); color: var(--cor-texto-principal);
+            min-height: 100vh; transition: background-color var(--duracao-animacao), color var(--duracao-animacao);
+            padding-top: 5rem; padding-bottom: 3rem; 
+        }
+        .container { width: 100%; max-width: 100%; margin: 0 auto; padding: 1.5rem; position: relative; z-index: 10; }
+
+        /* Fundo Animado Original */
+        .fundo-animado { position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; z-index: -1; }
+        .fundo-animado::before, .fundo-animado::after { content: ''; position: absolute; width: 15rem; height: 15rem; border-radius: 50%; opacity: 0.3; animation: flutuar 20s infinite ease-in-out; pointer-events: none; }
+        .fundo-animado::before { background-color: var(--cor-particula-1); top: 10vh; left: 5vw; }
+        .fundo-animado::after { background-color: var(--cor-particula-2); bottom: 15vh; right: 5vw; animation-delay: -10s; }
+        @keyframes flutuar { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(15vw, 15vh) scale(1.1); } }
+
+        /* Cabeçalho Original com Adaptação para Ajuste 2 e 1 */
+        .cabecalho-principal {
+            display: flex; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 50%; transform: translateX(-50%); 
+            width: 100%; max-width: 95%; padding: 1rem 1.5rem; background-color: var(--cor-fundo-principal); 
+            box-shadow: 0 2px 10px var(--cor-sombra); z-index: 50; border-radius: 1.5rem; margin-top: 1rem;
+        }
+        /* Ajuste no título para não sobrepor ícones */
+        .header-center { display: flex; align-items: center; gap: 10px; position: absolute; left: 50%; transform: translateX(-50%); pointer-events: none;}
+        .header-center h1 { font-size: 1.5rem; color: var(--cor-destaque); font-weight: 800; white-space: nowrap; margin: 0; }
+        .header-center i { font-size: 1.4rem; color: var(--cor-destaque); animation: pulse 3s infinite; }
+        /* Cabeçalho do Card */
+.card-header-frase {
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; /* Centraliza verticalmente sem esticar */
+    margin-bottom: 1rem;
+    width: 100%;
+}
+
+/* Badge da Categoria - Ajuste para não esticar */
+.frase-badge-categoria {
+    display: inline-flex; /* Mudado para inline-flex */
+    align-items: center;
+    gap: 6px;
+    background: rgba(var(--cor-destaque-rgb, 233, 30, 99), 0.1);
+    color: var(--cor-destaque);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    border: 1px solid rgba(var(--cor-destaque-rgb, 233, 30, 99), 0.2);
+    white-space: nowrap; /* Impede que o texto quebre */
+    height: fit-content; /* Garante que ele só tenha a altura necessária */
+}
+
+/* Garante que o ícone dentro do badge tenha tamanho fixo */
+.frase-badge-categoria i {
+    font-size: 0.75rem;
+    width: auto;
+    height: auto;
+}
+
+/* Descrição lateral */
+.frase-descricao-label {
+    font-size: 0.65rem;
+    opacity: 0.6;
+    font-style: italic;
+    text-align: right;
+    margin-left: 10px;
+    line-height: 1.2;
+}
+        
+        .btn-voltar { background: none; border: none; color: var(--cor-texto-principal); font-size: 1.5rem; cursor: pointer; padding: 0.5rem; z-index: 51; transition: all 0.2s; border-radius: 50%; }
+
+        /* --- NOVOS ESTILOS DE LAYOUT (Ajuste 1) --- */
+        .layout-controls { display: none; gap: 8px; z-index: 51; }
+        .btn-layout { background: none; border: none; color: var(--cor-texto-principal); opacity: 0.4; cursor: pointer; font-size: 1.1rem; transition: 0.2s; }
+        .btn-layout.active { opacity: 1; color: var(--cor-destaque); }
+
+        .mode-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
+        .mode-compact .frase-descricao { display: none; }
+        .mode-compact .frase-card { padding: 0.8rem; }
+        .mode-minimal .frase-card { background: none; box-shadow: none; border: none; border-left: 4px solid var(--cor-destaque); border-radius: 0; }
+
+        /* GRID DE CATEGORIAS Original */
+        .grid-categorias { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1.5rem; padding-top: 1.5rem; transition: opacity 0.3s; }
+        .categoria-card {
+            background: var(--cor-glass-fundo); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); 
+            border: 1px solid var(--cor-glass-borda); box-shadow: 0 0.5rem 2rem 0 rgba(31, 38, 135, 0.1);
+            display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+            height: auto; padding: 1.5rem 0.5rem; border-radius: var(--borda-raio); transition: all 0.2s;
+        }
+        .categoria-card i { font-size: 2.5rem; color: var(--cor-destaque); margin-bottom: 0.5rem; animation: pulse 2s infinite;}
+        .categoria-card p { font-size: 1rem; font-weight: 700; color: var(--cor-texto-principal); margin: 0; line-height: 1.2;}
+
+        /* LISTA DE FRASES Original */
+        .frases-lista { display: none; flex-direction: column; gap: 1.5rem; padding-top: 1rem; opacity: 0; transition: opacity 0.3s; }
+        .frases-lista.active { display: flex; opacity: 1; }
+
+        .frase-card {
+            background: var(--cor-glass-fundo); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); 
+            border: 1px solid var(--cor-glass-borda); box-shadow: 0 0.5rem 2rem 0 rgba(31, 38, 135, 0.1);
+            padding: 1.5rem; border-radius: var(--borda-raio); position: relative;
+        }
+        /* Ajuste 3: Estilo da Descrição */
+        .frase-descricao { display: block; font-size: 0.7rem; color: var(--cor-destaque); font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem; opacity: 0.8; }
+
+        .frase-texto { font-size: 1.2rem; font-style: italic; margin-bottom: 0.75rem; line-height: 1.5; }
+        .frase-autor { display: block; text-align: right; font-size: 0.9rem; font-weight: 600; opacity: 0.7; padding-bottom: 1rem; border-bottom: 1px dashed var(--cor-glass-borda); }
+
+        .frase-acoes { display: flex; justify-content: space-around; padding-top: 1rem; }
+        .btn-acao { background: none; border: none; color: var(--cor-texto-principal); cursor: pointer; font-size: 1.4rem; padding: 0.5rem; border-radius: 50%; transition: color 0.2s; }
+        .btn-acao:hover { color: var(--cor-destaque); }
+        .btn-img-criar { color: #2196f3; } /* Ajuste 5 */
+
+        /* PESQUISA E SUGESTÕES Original */
+        .search-container { position: relative; margin-bottom: 1.5rem; padding-top: 0.5rem; }
+        #search-bar {
+            width: 100%; padding: 0.75rem 3rem 0.75rem 2.5rem; border: 1px solid var(--cor-glass-borda);
+            border-radius: 1rem; background-color: var(--cor-glass-fundo); color: var(--cor-texto-principal);
+            font-size: 1rem; box-shadow: 0 2px 8px var(--cor-sombra); transition: border-color 0.2s;
+        }
+        .search-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--cor-destaque); }
+        .clear-btn { position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 1rem; cursor: pointer; padding: 0.5rem; opacity: 0.6; }
+
+        .suggestions-box {
+            position: absolute; width: 100%; max-height: 250px; overflow-y: auto; background: var(--cor-card-fundo);
+            border: 1px solid var(--cor-glass-borda); border-radius: 0 0 1rem 1rem; box-shadow: 0 8px 16px var(--cor-sombra); z-index: 40; top: 100%; display: none;
+        }
+        .suggestion-item { padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid var(--cor-glass-borda); }
+        .suggestion-item.is-category { font-weight: 700; color: var(--cor-destaque); }
+
+        /* Ripple e Animações Originais */
+        .ripple {position: relative;overflow: hidden;}
+        .ripple-effect {position: absolute;border-radius: 50%;transform: scale(0);animation: ripple-anim 0.6s linear;background-color: rgba(255, 255, 255, 0.7);pointer-events: none;}
+        @keyframes ripple-anim {to {transform: scale(4);opacity: 0;}}
+        @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.08);} }
+        
+        /* Estilo do Contador de Frases */
+        .categoria-card {
+            position: relative; /* Necessário para posicionar o número */
+        }
+
+        .categoria-contador {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: var(--cor-destaque);
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            min-width: 20px;
+            text-align: center;
+        }
+        
+        .btn-flutuante {
+    position: fixed;
+    bottom: 2rem;
+    right: 1.5rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    background: var(--cor-destaque);
+    color: white;
+    border: none;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 15px var(--cor-sombra);
+    z-index: 100;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.btn-flutuante:active {
+    transform: scale(0.9) rotate(45deg);
+}
+
+/* Animação de entrada da frase aleatória */
+@keyframes slideInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.frase-card-animada {
+    animation: slideInUp 0.4s ease-out;
+}
+
+/* Etiqueta de Categoria dentro do Card */
+.frase-badge-categoria {
+    background: rgba(var(--cor-destaque-rgb, 233, 30, 99), 0.1);
+    color: var(--cor-destaque);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid rgba(var(--cor-destaque-rgb, 233, 30, 99), 0.2);
+}
+
+.frase-descricao-label {
+    font-size: 0.65rem;
+    opacity: 0.6;
+    font-style: italic;
+    max-width: 50%;
+    text-align: right;
+}
+
+/* Garante que o texto da frase não suba demais */
+.frase-texto {
+    clear: both;
+    margin-top: 0.5rem;
+}
+/* Animação Skeleton */
+.skeleton {
+    background: var(--cor-glass-fundo);
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--borda-raio);
+}
+
+.skeleton::after {
+    content: "";
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.2), 
+        transparent
+    );
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    100% { transform: translateX(100%); }
+}
+
+.skeleton-card {
+    height: 120px;
+    width: 100%;
+    margin-bottom: 1.5rem;
+}
+
+.toast-container {
+    position: fixed;
+    bottom: 5rem; /* Acima do botão flutuante */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+}
+
+.toast {
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 0.85rem;
+    margin-bottom: 10px;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: fadeInUp 0.3s ease-out, fadeOut 0.3s ease-in 2s forwards;
+}
+
+@keyframes fadeOut {
+    to { opacity: 0; transform: translate(-50%, -20px); }
+}
+/* Isso garante que enquanto a classe 'favoritado' existir, o ícone será vermelho */
+.btn-favoritar.favoritado i {
+    color: var(--cor-destaque) !important;
+    font-weight: 900 !important; /* Para garantir o preenchimento do ícone */
+}
+
+/* Estilo do Modo Leitura (Tela Cheia) */
+.reader-mode {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--cor-fundo-principal, #121212); /* Usa sua cor de fundo ou preto */
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+    animation: fadeInReader 0.3s ease-out;
+}
+
+.reader-content {
+    max-width: 800px;
+    width: 100%;
+}
+
+.reader-text {
+    font-size: 2rem;
+    line-height: 1.5;
+    color: var(--cor-texto-principal, #ffffff);
+    margin-bottom: 1.5rem;
+    font-weight: 300;
+}
+
+.reader-autor {
+    font-size: 1.2rem;
+    opacity: 0.7;
+    font-style: italic;
+    color: var(--cor-destaque);
+}
+
+.reader-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: var(--cor-fundo-principal);
+    border: none;
+    color: var(--cor-destaque);
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+@keyframes fadeInReader {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.reader-hint {
+    margin-top: 3rem;
+    font-size: 0.8rem;
+    opacity: 0.4;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--cor-destaque);
+}
+
+/* Animação de entrada suave */
+.reader-content {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.reader-counter {
+    position: absolute;
+    top: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.8rem;
+    opacity: 0.5;
+    letter-spacing: 2px;
+    color: var(--cor-destaque);
+}
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(50px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-50px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.slide-next { animation: slideInRight 0.3s ease-out; }
+.slide-prev { animation: slideInLeft 0.3s ease-out; }
+
+/* UI Elements */
+.reader-actions {
+    position: fixed !important; bottom: 30px !important; left: 50% !important;
+    transform: translateX(-50%) !important; display: flex !important; gap: 15px !important;
+    background: var(--cor-destaque) !important; padding: 12px 25px !important;
+    border-radius: 50px !important; z-index: 10010 !important;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease !important;
+}
+
+.reading-progress-container {
+    position: fixed; top: 0; left: 0; width: 100%; height: 4px;
+    background: rgba(255,255,255,0.1); z-index: 10020;
+}
+.reading-progress-bar { height: 100%; background: var(--cor-destaque); width: 0%; }
+
+/* Popups de Ajuste */
+.reader-popup {
+    position: fixed; bottom: 95px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--cor-destaque); padding: 12px 20px; border-radius: 40px;
+    display: flex; align-items: center; gap: 15px; z-index: 10015;
+    opacity: 0; pointer-events: none; transition: all 0.3s ease;
+}
+.reader-popup.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+
+.ui-hidden { transform: translateY(-100%); opacity: 0; }
+.ui-hidden-actions { transform: translateX(-50%) translateY(150%) !important; opacity: 0 !important; }
+
+/* Botões de Círculo para os Temas - O QUE ESTAVA FALTANDO */
+.btn-theme-dot {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    border-radius: 50% !important;
+    border: 2px solid rgba(255,255,255,0.4) !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+    transition: transform 0.2s ease;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.btn-theme-dot:active {
+    transform: scale(0.8);
+}
+
+/* Botões de Fonte dentro do popup */
+.btn-font-control {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.font-size-indicator {
+    color: white;
+    font-weight: bold;
+    font-size: 0.9rem;
+    min-width: 40px;
+    text-align: center;
+}
+
+/* Definições de Cores para os Temas */
+.reader-mode.theme-default { background-color: #ffffff; color: #333; }
+
+.reader-mode.theme-sepia { background-color: #f4ecd8 !important; color: #5b4636 !important; }
+.reader-mode.theme-sepia .reader-story-body { color: #5b4636 !important; }
+
+.reader-mode.theme-green { background-color: #e8f5e9 !important; color: #2e7d32 !important; }
+.reader-mode.theme-green .reader-story-body { color: #2e7d32 !important; }
+
+.reader-mode.theme-gray { background-color: #2c2c2c !important; color: #e0e0e0 !important; }
+.reader-mode.theme-gray .reader-story-body { color: #e0e0e0 !important; }
+
+.reader-mode.theme-dark { background-color: #121212 !important; color: #ffffff !important; }
+.reader-mode.theme-dark .reader-story-body { color: #ffffff !important; }
+
+.btn-reader-acao {
+    background: none !important;
+    border: none !important;
+    color: var(--cor-texto-principal) !important;
+    font-size: 1.4rem !important;
+    cursor: pointer !important;
+}
+.btn-reader-acao:active {
+    transform: scale(0.85) !important;
+}
+
+/* Estado ativo para o botão de Favorito (Coração) */
+.btn-reader-acao.fav-active i {
+    color: var(--cor-glass-borda) !important; /* Vermelho vibrante */
+    text-shadow: 0 0 10px rgba(255, 71, 87, 0.4);
+}
+
+/* Ajuste para ícones FontAwesome dentro dos botões */
+.btn-reader-acao i {
+    pointer-events: none; /* Evita que o clique pegue no ícone em vez do botão */
+}
+
+.reader-swipe-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 30px;
+    padding-bottom: 50px; /* Espaço extra para não bater nos botões */
+    color: var(--cor-destaque);
+    opacity: 0.6;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    animation: pulseHint 2s infinite ease-in-out;
+}
+
+.reader-swipe-hint i {
+    font-size: 0.7rem;
+}
+
+/* Animação suave para chamar atenção sem incomodar */
+@keyframes pulseHint {
+    0%, 100% { transform: scale(1); opacity: 0.4; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+/* Ajuste para o scroll não cortar a dica */
+#scrollArea {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+    </style>
+</head>
+<body> 
+    <div class="fundo-animado"></div>
+
+    <header class="cabecalho-principal">
+        <button onclick="goBack()" class="btn-voltar ripple" aria-label="Voltar">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        
+        <div class="header-center">
+            <i id="header-icon" class="fas fa-book-open"></i>
+            <h1 id="header-titulo">Categorias</h1>
+        </div>
+
+        <div class="layout-controls" id="layout-controls">
+            <button class="btn-layout" onclick="setLayout('list')" id="btn-layout-list">
+                <i class="fas fa-bars"></i>
+            </button>
+            <button class="btn-layout" onclick="setLayout('grid')" id="btn-layout-grid">
+                <i class="fas fa-th-large"></i>
+            </button>
+            <button class="btn-layout" onclick="setLayout('compact')" id="btn-layout-compact">
+                <i class="fas fa-align-justify"></i>
+            </button>
+        </div>
+        
+        <div id="header-spacer" style="width: 2.5rem;"></div> 
+    </header>
+
+    <div class="container">
+        <div class="search-container">
+            <div class="input-group">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="search-bar" placeholder="Buscar frases, autores ou categorias..." autocomplete="off">
+                <button id="clear-search" class="clear-btn" aria-label="Limpar Pesquisa" style="display: none;"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="suggestions-box" class="suggestions-box" style="display: none;"></div>
+        </div>
+
+        <section id="categorias-grid" class="grid-categorias">
+            <p id="loading-message">Carregando categorias...</p>
+        </section>
+        
+        <section id="frases-lista" class="frases-lista"></section>
+        
+        <button id="btn-random" class="btn-flutuante ripple" title="Frase Aleatória">
+    <i class="fas fa-dice"></i>
+</button>
+    </div>
+    <div id="toast-container" class="toast-container"></div>
+    
+<script>
+
+// Coloque isso logo após a abertura da tag <script>
+window.dom = {
+    get grid() { return document.getElementById('categorias-grid'); },
+    get listaFrases() { return document.getElementById('frases-lista'); },
+    get loadingMessage() { return document.getElementById('loading-message'); },
+    get headerTitulo() { return document.getElementById('header-titulo'); },
+    get headerIcon() { return document.getElementById('header-icon'); },
+    get headerSpacer() { return document.getElementById('header-spacer'); },
+    get layoutControls() { return document.getElementById('layout-controls'); },
+    get pageTitle() { return document.getElementById('page-title'); },
+    get btnVoltar() { return document.querySelector('.btn-voltar'); },
+    get searchBar() { return document.getElementById('search-bar'); },
+    get suggestionsBox() { return document.getElementById('suggestions-box'); },
+    get clearSearchBtn() { return document.getElementById('clear-search'); },
+    get toastContainer() { return document.getElementById('toast-container'); }
+};
+
+
+// --- CONFIGURAÇÃO GLOBAL ---
+window.listaAtualParaLeitura = [];
+
+// --- MODO LEITURA (OPENER) ---
+function openReaderMode(index) {
+    const item = window.listaAtualParaLeitura[index];
+    if (!item) return;
+    
+    // Chama a função de salvar histórico usando a chave frasesHistorico
+    window.addToHistorico(item);
+
+    const categoriaNome = item.Categoria || item.categoria || "Geral";
+    const categoriaDescricao = item.Descricao || item.descricao || "Geral";
+    const textoCompleto = item.Texto || item.texto || "";
+    const autorNome = item.Autor || item.autor || "Anônimo";
+    const isFav = window.isFavorited(item);
+
+    let currentFontScale = parseFloat(localStorage.getItem('reader-font-scale')) || 1.0;
+    let currentTheme = localStorage.getItem('reader-theme') || 'default';
+
+    const reader = document.createElement('div');
+    reader.className = `reader-mode theme-${currentTheme}`;
+    document.body.style.overflow = 'hidden';
+    
+    reader.innerHTML = `
+        <div class="reading-progress-container"><div class="reading-progress-bar" id="progressBar"></div></div>
+        <div class="reader-fixed-header" id="readerHeader">
+            <div class="reader-banner" style="background: linear-gradient(135deg, var(--cor-destaque), #444); opacity: 0.9;"></div>
+            <button class="reader-close" onclick="closeReader()"><i class="fas fa-times"></i></button>
+            <span class="reader-counter">${index + 1} / ${window.listaAtualParaLeitura.length}</span>
+            <div style="text-align: center; padding: 0 20px; position: relative; z-index: 10;">
+                <h1 style="color: var(--cor-destaque); font-size: 1.8rem; margin-top: -20px;">${categoriaNome}</h1>
+                
+                <p style="font-weight: 700; color: var(--cor-destaque); opacity: 0.7; font-size: 1rem;">${autorNome}</p>
+                
+                 <p style="font-weight: 700; color: var(--cor-destaque); opacity: 0.7; font-size: 0.8rem;">${categoriaDescricao}</p>
+            </div>
+        </div>
+
+        <div class="reader-popup" id="fontPopup">
+            <button class="btn-font-control" onclick="adjustFontSize(-0.1, event)"><i class="fas fa-minus"></i></button>
+            <span class="font-size-indicator" id="fontSizeLabel">${Math.round(currentFontScale * 100)}%</span>
+            <button class="btn-font-control" onclick="adjustFontSize(0.1, event)"><i class="fas fa-plus"></i></button>
+        </div>
+
+        <div class="reader-popup" id="themePopup">
+            <div class="btn-theme-dot" style="background:#ffffff; border:1px solid #ddd" onclick="setReaderTheme('default', event)"></div>
+            <div class="btn-theme-dot" style="background:#f4ecd8" onclick="setReaderTheme('sepia', event)"></div>
+            <div class="btn-theme-dot" style="background:#e8f5e9" onclick="setReaderTheme('green', event)"></div>
+            <div class="btn-theme-dot" style="background:#2c2c2c" onclick="setReaderTheme('gray', event)"></div>
+            <div class="btn-theme-dot" style="background:#121212" onclick="setReaderTheme('dark', event)"></div>
+        </div>
+
+        <div class="reader-content-scroll" id="scrollArea">
+            <div class="reader-story-body" style="font-size: ${1.4 * currentFontScale}rem; text-align: center;">
+                "${textoCompleto.replace(/\n/g, '<br><br>')}"
+            </div>
+            
+            <div class="reader-swipe-hint">
+                <i class="fas fa-chevron-left"></i>
+                <span>Deslize para navegar</span>
+                <i class="fas fa-chevron-right"></i>
+            </div>
+        </div>
+
+        <div class="reader-actions" id="readerActions">
+            <button class="btn-reader-acao" onclick="togglePopup('fontPopup', event)"><i class="fas fa-font"></i></button>
+            <button class="btn-reader-acao" onclick="togglePopup('themePopup', event)"><i class="fas fa-lightbulb"></i></button>
+            <button class="btn-reader-acao" onclick="handleCopiar(\`${textoCompleto.replace(/`/g, "'")}\`, event)"><i class="fas fa-copy"></i></button>
+            <button class="btn-reader-acao ${isFav ? 'fav-active' : ''}" id="fav-reader-btn" onclick="handleFavoritarReader(${JSON.stringify(item).replace(/"/g, '&quot;')}, event)"><i class="fas fa-heart"></i></button>
+            <button class="btn-reader-acao" onclick="handlePartilhar(\`${textoCompleto.replace(/`/g, "'")}\`, event)"><i class="fas fa-share-alt"></i></button>
+        </div>
+    `;
+
+    document.body.appendChild(reader);
+    setupReaderLogic(reader, index, window.listaAtualParaLeitura);
+}
+
+// --- CONTROLES GLOBAIS ---
+window.closeReader = function() {
+    const reader = document.querySelector('.reader-mode');
+    if (reader) reader.remove();
+    document.body.style.overflow = '';
+};
+
+window.setReaderTheme = function(theme, e) {
+    if(e) e.stopPropagation();
+    const reader = document.querySelector('.reader-mode');
+    if (!reader) return;
+    reader.classList.remove('theme-sepia', 'theme-green', 'theme-gray', 'theme-dark');
+    if(theme !== 'default') reader.classList.add('theme-' + theme);
+    localStorage.setItem('reader-theme', theme);
+};
+
+window.adjustFontSize = function(delta, e) {
+    if(e) e.stopPropagation();
+    let scale = parseFloat(localStorage.getItem('reader-font-scale')) || 1.0;
+    scale = Math.max(0.7, Math.min(2.0, scale + delta));
+    const body = document.querySelector('.reader-story-body');
+    if (body) body.style.fontSize = (1.4 * scale) + 'rem';
+    document.getElementById('fontSizeLabel').innerText = Math.round(scale * 100) + '%';
+    localStorage.setItem('reader-font-scale', scale);
+};
+
+window.togglePopup = (id, e) => {
+    if(e) e.stopPropagation();
+    const target = document.getElementById(id);
+    const isOpen = target.classList.contains('show');
+    document.querySelectorAll('.reader-popup').forEach(p => p.classList.remove('show'));
+    if(!isOpen) target.classList.add('show');
+};
+
+// --- SALVAMENTO COM CHAVE: frasesHistorico ---
+window.addToHistorico = function(frase) {
+    if (!frase) return;
+    const txt = frase.Texto || frase.texto || "";
+    if (!txt) return;
+
+    let hist = JSON.parse(localStorage.getItem(KEY_HISTORICO) || '[]');
+    
+    // Remove duplicados pelo texto (independente de T ou t)
+    hist = hist.filter(item => (item.Texto || item.texto) !== txt);
+    
+    // Adiciona o novo no topo com a estrutura correta
+    hist.unshift({
+        texto: txt,
+        autor: frase.Autor || frase.autor || "Anônimo",
+        categoria: frase.Categoria || frase.categoria || "Geral",
+        data: new Date().toISOString()
+    });
+
+    // Salva e limita a 50
+    localStorage.setItem(KEY_HISTORICO, JSON.stringify(hist.slice(0, 50)));
+    
+    // Atualiza a Home se a função estiver disponível
+    if (typeof atualizarContadoresHome === "function") {
+        atualizarContadoresHome();
+    }
+};
+window.isFavorited = function(frase) {
+    if (!frase) return false;
+    const favs = JSON.parse(localStorage.getItem(KEY_FAVORITOS) || '[]');
+    const txtAlvo = (frase.Texto || frase.texto || "").trim();
+    // Comparação rigorosa para evitar duplicados
+    return favs.some(item => (item.Texto || item.texto || "").trim() === txtAlvo);
+};
+
+window.handleFavoritarReader = function(item, e) {
+    if(e) e.stopPropagation();
+    const btn = e.currentTarget;
+    const txtAlvo = (item.Texto || item.texto || "").trim();
+
+    const executarTrocaReader = () => {
+        let favs = JSON.parse(localStorage.getItem(KEY_FAVORITOS) || '[]');
+        const index = favs.findIndex(f => (f.Texto || f.texto || "").trim() === txtAlvo);
+
+        if (index > -1) {
+            favs.splice(index, 1);
+            btn.classList.remove('fav-active');
+            if (typeof triggerHapticFeedback === 'function') triggerHapticFeedback(25);
+        } else {
+            favs.push(item);
+            btn.classList.add('fav-active');
+            if (typeof triggerHapticFeedback === 'function') triggerHapticFeedback(50);
+        }
+
+        localStorage.setItem(KEY_FAVORITOS, JSON.stringify(favs));
+        
+        // Notifica outras partes do sistema
+        if (typeof atualizarContadoresHome === "function") atualizarContadoresHome();
+        // Se estiver no histórico ou busca, pode ser necessário atualizar a UI
+        if (typeof renderHistorico === "function") renderHistorico();
+    };
+
+    // Se o botão já está ativo, ele vai REMOVER. Pedimos confirmação no Modal.
+    if (btn.classList.contains('fav-active')) {
+        window.CustomModal.show({
+            titulo: "Remover Favorito",
+            mensagem: "Deseja remover esta frase dos seus favoritos?",
+            tipo: "confirm",
+            icone: "fa-heart-broken",
+            aoConfirmar: executarTrocaReader
+        });
+    } else {
+        // Se for para adicionar, faz direto para ser rápido
+        executarTrocaReader();
+    }
+};
+
+// --- LÓGICA DE UI E SWIPE ---
+function setupReaderLogic(reader, index, frasesAtuais) {
+    const scrollArea = reader.querySelector('#scrollArea');
+    const header = reader.querySelector('#readerHeader');
+    const actions = reader.querySelector('#readerActions');
+    const progressBar = reader.querySelector('#progressBar');
+    let lastScroll = 0;
+
+    scrollArea.addEventListener('scroll', () => {
+        const winScroll = scrollArea.scrollTop;
+        const height = scrollArea.scrollHeight - scrollArea.clientHeight;
+        progressBar.style.width = (winScroll / height * 100) + "%";
+
+        if (winScroll > lastScroll && winScroll > 50) {
+            header.classList.add('ui-hidden'); 
+            actions.classList.add('ui-hidden-actions');
+            document.querySelectorAll('.reader-popup').forEach(p => p.classList.remove('show'));
+        } else {
+            header.classList.remove('ui-hidden'); 
+            actions.classList.remove('ui-hidden-actions');
+        }
+        lastScroll = winScroll;
+    });
+
+    let xDown = null;
+    scrollArea.addEventListener('touchstart', e => { xDown = e.touches[0].clientX; }, {passive: true});
+    scrollArea.addEventListener('touchend', e => {
+        if (!xDown) return;
+        let xUp = e.changedTouches[0].clientX;
+        let xDiff = xDown - xUp;
+        if (Math.abs(xDiff) > 80) {
+            if (xDiff > 0 && index < frasesAtuais.length - 1) { 
+                window.closeReader(); openReaderMode(index + 1); 
+            } else if (xDiff < 0 && index > 0) { 
+                window.closeReader(); openReaderMode(index - 1); 
+            }
+        }
+        xDown = null;
+    }, {passive: true});
+}
+window.handleCopiar = (texto) => {
+    if (!texto) return;
+
+    navigator.clipboard.writeText(texto).then(() => {
+        // Feedback tátil (Vibração curta)
+        if (typeof triggerHapticFeedback === 'function') {
+            triggerHapticFeedback(50);
+        }
+
+        // Chamada direta ao CustomModal para um visual Premium
+        window.CustomModal.show({
+            titulo: "Copiado!",
+            mensagem: "O texto foi copiado para sua área de transferência com sucesso.",
+            icone: "fa-check-double", // Ícone de check duplo
+            tipo: "alert"
+        });
+    }).catch(err => {
+        console.error("Erro ao copiar: ", err);
+        window.CustomModal.show({
+            titulo: "Erro",
+            mensagem: "Não foi possível copiar o texto automaticamente.",
+            icone: "fa-exclamation-triangle",
+            tipo: "alert"
+        });
+    });
+};
+
+window.handlePartilhar = (texto) => {
+    if (navigator.share) navigator.share({ text: texto });
+    else window.handleCopiar(texto);
+};
+
+// Auxiliares de UI
+window.togglePopup = (id, e) => {
+    e.stopPropagation();
+    const target = document.getElementById(id);
+    const isOpen = target.classList.contains('show');
+    document.querySelectorAll('.reader-popup').forEach(p => p.classList.remove('show'));
+    if(!isOpen) target.classList.add('show');
+};
+window.closeAllPopups = () => document.querySelectorAll('.reader-popup').forEach(p => p.classList.remove('show'));
+
+// Funções de controle global (necessárias para os onclicks do HTML acima)
+window.togglePopup = (id, e) => {
+    e.stopPropagation();
+    const target = document.getElementById(id);
+    const isOpen = target.classList.contains('show');
+    closeAllPopups();
+    if(!isOpen) target.classList.add('show');
+    triggerHapticFeedback(10);
+};
+
+window.closeAllPopups = () => document.querySelectorAll('.reader-popup').forEach(p => p.classList.remove('show'));
+
+window.setReaderTheme = (theme, e) => {
+    if(e) e.stopPropagation();
+    const reader = document.querySelector('.reader-mode');
+    reader.classList.remove('theme-sepia', 'theme-green', 'theme-gray', 'theme-dark');
+    if(theme !== 'default') reader.classList.add('theme-' + theme);
+    localStorage.setItem('reader-theme', theme);
+    triggerHapticFeedback(20);
+};
+
+window.adjustFontSize = (delta, e) => {
+    e.stopPropagation();
+    let scale = parseFloat(localStorage.getItem('reader-font-scale')) || 1.0;
+    scale = Math.max(0.7, Math.min(2.0, scale + delta));
+    document.querySelector('.reader-story-body').style.fontSize = (1.4 * scale) + 'rem';
+    document.getElementById('fontSizeLabel').innerText = Math.round(scale * 100) + '%';
+    localStorage.setItem('reader-font-scale', scale);
+};
+    
+    // --- FEEDBACK E UI (Seu Código Original) ---
+    
+    function playClickSound() {
+        if (localStorage.getItem(KEY_SOM) !== 'false') {
+            const clickSound = new Audio('assets/sound/click.mp3');
+            clickSound.volume = 0.5;
+            clickSound.play().catch(() => {});
+        }
+    }
+
+    function triggerHapticFeedback(pattern = 20) {
+        if (navigator.vibrate && localStorage.getItem(KEY_VIBRACAO) !== 'false') {
+            navigator.vibrate(pattern);
+        }
+    }
+
+    function applyRippleEffect(e) {
+        const target = e.currentTarget;
+        triggerHapticFeedback(20);
+        playClickSound();
+
+        const rect = target.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        // Ajuste para touch ou click
+        const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+        const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+        
+        const x = clientX - rect.left - size / 2;
+        const y = clientY - rect.top - size / 2;
+
+        const newRipple = document.createElement('span');
+        newRipple.classList.add('ripple-effect');
+        newRipple.style.width = newRipple.style.height = size + 'px';
+        newRipple.style.left = x + 'px';
+        newRipple.style.top = y + 'px';
+        
+        target.appendChild(newRipple);
+        newRipple.addEventListener('animationend', () => newRipple.remove());
+    }
+
+    // --- AÇÕES DO CARD (Seu Código Original + Ajuste de Feedback) ---
+
+    function fallbackCopyTextToClipboard(text) {
+        let textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed"; textArea.style.opacity = "0";     
+        document.body.appendChild(textArea);
+        textArea.focus(); textArea.select();
+        try {
+            return document.execCommand('copy');
+        } catch (err) { return false; } finally {
+            document.body.removeChild(textArea);
+        }
+    }
+    
+    /** Lida com a cópia de texto e exibe feedback visual (Ícone + Toast) */
+    function handleCopiar(texto, event) {
+        const button = event.currentTarget;
+        triggerHapticFeedback(20);
+
+        const successAction = () => {
+            // 1. Feedback no Botão (Troca ícone para Check)
+            const originalIcon = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check" style="color:#4caf50"></i>'; 
+            
+            // 2. Feedback Tátil
+            triggerHapticFeedback(75);
+            
+            // 3. Feedback Visual Flutuante (Toast)
+            if (typeof showToast === 'function') {
+                showToast("Copiado com sucesso! ✅");
+            }
+
+            // 4. Retorna o ícone original após 1 segundo
+            setTimeout(() => { 
+                button.innerHTML = originalIcon; 
+            }, 1000);
+        };
+
+        // Tenta usar a API moderna, se falhar ou não existir, usa o fallback
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(texto)
+                .then(successAction)
+                .catch(() => {
+                    if (fallbackCopyTextToClipboard(texto)) successAction();
+                });
+        } else {
+            if (fallbackCopyTextToClipboard(texto)) {
+                successAction();
+            } else {
+                if (typeof showToast === 'function') {
+                    showToast("Erro ao copiar texto. ❌");
+                }
+            }
+        }
+    }
+    
+    function showToast(mensagem) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = mensagem;
+    container.appendChild(toast);
+    
+    setTimeout(() => toast.remove(), 2500);
+}
+// Garante que a função toggleFavorite exista globalmente
+window.toggleFavorite = function(frase) {
+    if (!frase || !frase.texto) return false;
+    
+    const chave = 'favoritos'; // Ajuste aqui se sua chave de favoritos for outra
+    let favoritos = JSON.parse(localStorage.getItem(chave)) || [];
+    
+    // Identificador único para a frase
+    const idParaBuscar = btoa(unescape(encodeURIComponent(frase.texto + (frase.autor || '')))).substring(0, 32);
+    
+    const indiceExistente = favoritos.findIndex(item => {
+        const idItem = item.id || btoa(unescape(encodeURIComponent(item.texto + (item.autor || '')))).substring(0, 32);
+        return idItem === idParaBuscar;
+    });
+
+    if (indiceExistente !== -1) {
+        // Se já existe, remove
+        favoritos.splice(indiceExistente, 1);
+        localStorage.setItem(chave, JSON.stringify(favoritos));
+        return false; // Retorna false porque não é mais favorito
+    } else {
+        // Se não existe, adiciona
+        favoritos.push({ ...frase, id: idParaBuscar });
+        localStorage.setItem(chave, JSON.stringify(favoritos));
+        return true; // Retorna true porque agora é favorito
+    }
+};
+
+/** Função handleFavoritar ajustada e com toggleFavorite garantido */
+function handleFavoritar(fraseJsonString, event) {
+    if (event) event.stopPropagation();
+
+    const button = event.currentTarget;
+    let frase;
+
+    try {
+        // Tenta decodificar caso venha encodado, senão parseia direto
+        const decoded = decodeURIComponent(fraseJsonString);
+        frase = JSON.parse(decoded);
+    } catch (e) { 
+        try {
+            frase = JSON.parse(fraseJsonString);
+        } catch(err) {
+            console.error("Erro ao processar frase:", err);
+            return;
+        }
+    }
+    
+    const processarTroca = () => {
+        // Agora o window.toggleFavorite existe com certeza
+        const isNowFavoritado = window.toggleFavorite(frase); 
+        
+        // Atualiza visual
+        button.classList.toggle('favoritado', isNowFavoritado);
+        const icon = button.querySelector('i');
+        if (icon) icon.className = isNowFavoritado ? 'fas fa-heart' : 'far fa-heart';
+
+        if (typeof triggerHapticFeedback === 'function') {
+            triggerHapticFeedback(isNowFavoritado ? 50 : 25);
+        }
+
+        // Se estiver na tela de favoritos, remove o card
+        if (!isNowFavoritado && document.getElementById('favoritos-lista')) {
+            const card = button.closest('.frase-card');
+            if (card) {
+                card.style.opacity = '0';
+                setTimeout(() => { if(typeof renderFavoritos === 'function') renderFavoritos(); }, 300);
+            }
+        }
+    };
+
+    if (button.classList.contains('favoritado')) {
+        window.CustomModal.show({
+            titulo: "Remover Favorito",
+            mensagem: "Deseja retirar esta frase dos seus favoritos?",
+            tipo: "confirm",
+            icone: "fa-heart-broken",
+            aoConfirmar: processarTroca
+        });
+    } else {
+        processarTroca();
+    }
+}
+
+async function handlePartilhar(texto, event) {
+    if (event) event.stopPropagation();
+    
+    // Feedback tátil inicial
+    if (typeof triggerHapticFeedback === 'function') triggerHapticFeedback(30);
+
+    const shareData = {
+        title: 'Frase do Dia',
+        text: `"${texto}"`,
+        url: window.location.href
+    };
+
+    try {
+        if (navigator.share) {
+            await navigator.share(shareData);
+        } else {
+            // Fallback: Se não houver suporte a Share, usamos o CustomModal
+            // para avisar o usuário antes de copiar.
+            window.CustomModal.show({
+                titulo: "Compartilhar",
+                mensagem: "Seu navegador não suporta compartilhamento direto. O texto será copiado para você colar onde desejar!",
+                icone: "fa-share-alt",
+                tipo: "confirm", // Usamos confirm para ele clicar em "Continuar"
+                aoConfirmar: () => {
+                    handleCopiar(texto); // Chama sua função de cópia já ajustada
+                }
+            });
+        }
+    } catch (err) {
+        // Ignora o erro se o usuário apenas cancelou o compartilhamento
+        if (err.name !== 'AbortError') {
+            console.log('Erro ao compartilhar:', err);
+        }
+    }
+}
+    // --- NAVEGAÇÃO INTERNA (TROCA DE TELA) ---
+
+    function goBack() {
+        if (currentCategory || dom.searchBar.value) {
+            clearSearch();
+        } else {
+            window.location.href = 'index.html'; 
+        }
+    }
+
+    function showCategoriasGrid() {
+        currentCategory = null;
+        dom.headerTitulo.textContent = 'Categorias';
+        dom.headerIcon.className = 'fas fa-book-open'; // Reset do ícone (Ajuste 2)
+        dom.pageTitle.textContent = 'Frases do Coração - Categorias';
+        
+        // Esconde controles de layout e spacer (Ajuste 1)
+        dom.layoutControls.style.display = 'none';
+        dom.headerSpacer.style.display = 'block';
+
+        dom.listaFrases.classList.remove('active');
+        dom.listaFrases.innerHTML = '';
+        dom.grid.style.display = 'grid';
+        setTimeout(() => {
+            dom.grid.style.opacity = '1';
+            renderCategoriasGrid(allFrasesData); 
+        }, 10);
+    }
+
+    function navigateToFrases(categoria) {
+        currentCategory = categoria;
+        dom.headerTitulo.textContent = categoria;
+        
+        // Ajuste 2: Ícone dinâmico baseado no mapa de ícones
+        const iconClass = (typeof iconMap !== 'undefined' && iconMap[categoria]) || 'fas fa-quote-right';
+        dom.headerIcon.className = iconClass;
+        
+        dom.pageTitle.textContent = `Frases | ${categoria}`;
+        
+        // Ajuste 1: Mostra controles de layout e esconde o spacer
+        dom.layoutControls.style.display = 'flex';
+        dom.headerSpacer.style.display = 'none';
+        
+        clearSuggestions();
+        dom.searchBar.value = ''; 
+        
+        dom.grid.style.opacity = '0';
+        setTimeout(() => {
+            dom.grid.style.display = 'none';
+            dom.listaFrases.classList.add('active');
+            filterAndRenderFrasesOnPage(categoria);
+        }, 300);
+    }
+
+    // --- FUNÇÕES DE PESQUISA E SUGESTÕES (Ajuste 4) ---
+    
+    function updateSuggestions(query) {
+        query = query.trim().toLowerCase();
+        dom.suggestionsBox.innerHTML = '';
+        
+        if (query.length < 2) {
+            dom.suggestionsBox.style.display = 'none';
+            dom.clearSearchBtn.style.display = 'none';
+            return;
+        }
+
+        dom.clearSearchBtn.style.display = 'block';
+        
+        const MAX_SUGGESTIONS = 8;
+        let suggestionsCount = 0;
+        
+        // 1. Sugerir Categorias (Máximo 3)
+        const matchedCategories = allCategories.filter(cat => cat.toLowerCase().includes(query));
+        matchedCategories.slice(0, 3).forEach(cat => {
+            if (suggestionsCount < MAX_SUGGESTIONS) {
+                renderSuggestionItem(highlightMatch(cat, query), 'category', cat);
+                suggestionsCount++;
+            }
+        });
+
+        // 2. Sugerir Frases/Autores/Descrições (Ajuste 3 e 4)
+        const matchedFrases = allFrasesData.filter(frase => 
+            frase.texto.toLowerCase().includes(query) || 
+            (frase.autor && frase.autor.toLowerCase().includes(query)) ||
+            (frase.descricao && frase.descricao.toLowerCase().includes(query))
+        );
+        
+        matchedFrases.slice(0, MAX_SUGGESTIONS - suggestionsCount).forEach(frase => {
+            if (suggestionsCount < MAX_SUGGESTIONS) {
+                let display = frase.texto.length > 50 
+                    ? frase.texto.substring(0, 50) + '...' 
+                    : frase.texto;
+
+                display = highlightMatch(display, query);
+                renderSuggestionItem(display, 'phrase', frase.texto, frase);
+                suggestionsCount++;
+            }
+        });
+        
+        dom.suggestionsBox.style.display = (suggestionsCount > 0) ? 'block' : 'none';
+    }
+
+    function renderSuggestionItem(displayHtml, type, value, fullData = null) {
+        const item = document.createElement('div');
+        item.className = `suggestion-item ${type === 'category' ? 'is-category' : ''}`;
+        
+        // Adiciona ícone na sugestão para feedback visual
+        const icon = type === 'category' ? '<i class="fas fa-folder"></i> ' : '<i class="fas fa-quote-left"></i> ';
+        item.innerHTML = icon + displayHtml;
+        
+        item.addEventListener('click', () => {
+            if (type === 'category') {
+                dom.searchBar.value = value;
+                navigateToFrases(value);
+            } else {
+                // Ajuste 4: Se clicar em uma frase, exibe apenas aquele card
+                dom.searchBar.value = value;
+                clearSuggestions();
+                renderSinglePhraseResult(fullData); 
+            }
+        });
+        dom.suggestionsBox.appendChild(item);
+    }
+    
+    function clearSearch() {
+        dom.searchBar.value = '';
+        clearSuggestions();
+        showCategoriasGrid(); 
+    }
+    
+    function clearSuggestions() {
+        dom.suggestionsBox.innerHTML = '';
+        dom.suggestionsBox.style.display = 'none';
+        if (!dom.searchBar.value) dom.clearSearchBtn.style.display = 'none';
+    }
+
+    function highlightMatch(text, query) {
+        const regex = new RegExp(`(${query})`, 'gi');
+        return text.replace(regex, '<strong>$1</strong>');
+    }
+    
+    // --- RENDERIZAÇÃO DE CARDS (Ajuste 1, 3 e 5) ---
+    
+    function renderFraseCard(frase, index) {
+    const card = document.createElement('div');
+    card.className = 'frase-card ripple'; 
+    
+    const isFavorito = isFavorited(frase); 
+    const categoriaNome = frase.categoria || "Geral";
+
+    // Limpeza de strings para evitar quebras no HTML
+    let cleanFraseJson = JSON.stringify(frase).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    let cleanText = frase.texto.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+    card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; width: 100%; height: auto;">
+            <span class="frase-badge-categoria" style="display: inline-flex; align-items: center; height: fit-content;">
+                <i class="${iconMap[categoriaNome] || iconMap['default']}" style="margin-right: 5px;"></i> 
+                ${categoriaNome}
+            </span>
+            ${frase.descricao ? `<span class="frase-descricao-label">${frase.descricao}</span>` : ''}
+        </div>
+        
+        <p class="frase-texto" style="cursor: zoom-in;" onclick="openReaderMode(${index})">
+            ${frase.texto}
+        </p>
+        
+        <span class="frase-autor">— ${frase.autor || 'Autor desconhecido'}</span>
+        
+        <div class="frase-acoes">
+            <button class="btn-acao ripple" title="Copiar" onclick="handleCopiar('${cleanText}', event)">
+                <i class="fas fa-copy"></i>
+            </button>
+            <button class="btn-acao btn-favoritar ripple ${isFavorito ? 'favoritado' : ''}" title="Favoritar" onclick="handleFavoritar('${cleanFraseJson}', event)">
+                <i class="fas fa-heart"></i>
+            </button>
+            <button class="btn-acao btn-img-criar ripple" title="Criar Imagem" onclick="handleCriarImagem('${cleanText}', event)">
+                <i class="fas fa-image"></i>
+            </button>
+            <button class="btn-acao ripple" title="Compartilhar" onclick="handlePartilhar('${cleanText}', event)">
+                <i class="fas fa-share-alt"></i>
+            </button>
+        </div>
+    `;
+    
+    return card;
+}
+
+    /** Adiciona o efeito Ripple (onda de clique) ao elemento. */
+    function applyRippleEffect(e) {
+        const target = e.currentTarget;
+        triggerHapticFeedback(20);
+        playClickSound();
+
+        const rect = target.getBoundingClientRect();
+        const oldRipple = target.querySelector('.ripple-effect');
+        if (oldRipple) oldRipple.remove();
+
+        const size = Math.max(rect.width, rect.height);
+        const x = e.clientX - rect.left - size / 2;
+        const y = e.clientY - rect.top - size / 2;
+
+        const newRipple = document.createElement('span');
+        newRipple.classList.add('ripple-effect');
+        
+        newRipple.style.width = newRipple.style.height = size + 'px';
+        newRipple.style.left = x + 'px';
+        newRipple.style.top = y + 'px';
+        
+        target.appendChild(newRipple);
+
+        newRipple.addEventListener('animationend', () => {
+            newRipple.remove();
+        });
+    }
+
+function filterAndRenderFrasesOnPage(categoria = null, termoPesquisa = null) {
+    let frasesFiltradas = [];
+    
+    if (categoria) {
+        frasesFiltradas = allFrasesData.filter(frase => 
+            frase.categoria && frase.categoria.trim().toUpperCase() === categoria.toUpperCase()
+        );
+    } else if (termoPesquisa) {
+        const queryLower = termoPesquisa.toLowerCase();
+        frasesFiltradas = allFrasesData.filter(frase => 
+            frase.texto.toLowerCase().includes(queryLower) ||
+            (frase.autor && frase.autor.toLowerCase().includes(queryLower)) ||
+            (frase.descricao && frase.descricao.toLowerCase().includes(queryLower))
+        );
+        
+        window.dom.headerTitulo.textContent = 'Resultados';
+        window.dom.headerIcon.className = 'fas fa-search';
+        window.dom.layoutControls.style.display = 'flex';
+        window.dom.headerSpacer.style.display = 'none';
+        window.dom.grid.style.display = 'none';
+        window.dom.listaFrases.classList.add('active');
+    }
+
+    // --- ESSENCIAL PARA O MODO LEITURA ---
+    window.listaAtualParaLeitura = frasesFiltradas;
+
+    window.dom.listaFrases.innerHTML = '';
+    
+    if (frasesFiltradas.length === 0) {
+        window.dom.listaFrases.innerHTML = `<p id="status-message">Nada encontrado.</p>`;
+        return;
+    }
+
+    // Renderiza cada card passando o index correto
+    frasesFiltradas.forEach((frase, index) => {
+        window.dom.listaFrases.appendChild(renderFraseCard(frase, index));
+    });
+}
+
+    // Função para o Ajuste 4: Exibir apenas um resultado específico
+    function renderSinglePhraseResult(fraseObj) {
+        dom.listaFrases.innerHTML = '';
+        dom.grid.style.display = 'none';
+        dom.listaFrases.classList.add('active');
+        dom.layoutControls.style.display = 'flex';
+        dom.headerSpacer.style.display = 'none';
+        dom.headerIcon.className = 'fas fa-search';
+        dom.headerTitulo.textContent = 'Frase Encontrada';
+        dom.listaFrases.appendChild(renderFraseCard(fraseObj));
+    }
+
+function handleCriarImagem(texto, e) {
+    if (e) e.stopPropagation();
+    triggerHapticFeedback(40);
+
+    // Criamos o objeto EXATAMENTE como o editor espera ler
+    const dadosParaEditor = {
+        textoFrase: texto,
+        textoAutor: "Anônimo" // Ou deixe vazio "" se preferir
+    };
+
+    localStorage.setItem('dados_edicao_simples', JSON.stringify(dadosParaEditor));
+    window.location.href = 'frases-imagem.html'; 
+}
+    
+    const iconMap = {
+
+    // A
+    "Acção": "fas fa-running",
+    "Adoção": "fas fa-child-reaching",
+    "Agradecimento": "fas fa-hands-clapping",
+    "Agricultura": "fas fa-seedling",
+    "Meio Ambiente": "fas fa-globe-americas",
+    "Alma": "fas fa-dove",
+    "Ambição": "fas fa-trophy",
+    "Amizade": "fas fa-user-friends",
+    "Amizade Colorida": "fas fa-handshake",
+    "Amigos Falsos": "fas fa-mask",
+    "Amigos Verdadeiros": "fas fa-users",
+    "Amor": "fas fa-heart",
+    "Declaração de Amor": "fas fa-envelope-open-text",
+    "Amor à Distância": "fas fa-plane",
+    "Amor Não Correspondido": "fas fa-heart-broken",
+    "Amor Próprio": "fas fa-face-grin-hearts",
+    "Amor Secreto": "fas fa-user-secret",
+    "Análise Psicológica": "fas fa-brain",
+    "Animes": "fas fa-face-grin-tongue",
+    "Aniversário": "fas fa-cake-candles",
+    "Ano Novo": "fas fa-champagne-glasses",
+    "Aprendizado": "fas fa-book-open",
+    "Arquitetura": "fas fa-building",
+    "Arte (Conceitual)": "fas fa-lightbulb",
+    "Arte (Moderna)": "fas fa-paint-roller",
+    "Astrofísica": "fas fa-meteor",
+    "Astrologia": "fas fa-circle",
+    "Atitude": "fas fa-hand-fist",
+    "Autoajuda": "fas fa-hand-holding-heart",
+    "Autoconfiança": "fas fa-shield-halved",
+    "Autoconhecimento": "fas fa-glasses",
+    "Autoestima": "fas fa-face-smile",
+    "Aventura": "fas fa-mountain-sun",
+    "Avôs": "fas fa-people-roof",
+
+    // B
+    "Beleza (Exterior)": "fas fa-wand-magic-sparkles",
+    "Beleza (Interior)": "fas fa-star",
+    "Boa Noite": "fas fa-moon",
+    "Boa Noite Amor": "fas fa-cloud-moon",
+    "Boa Tarde": "fas fa-sun",
+    "Boa Tarde Amor": "fas fa-cloud-sun",
+    "Bom Dia": "fas fa-sun",
+    "Bom Dia Amor": "fas fa-cloud-sun-rain",
+    "Brincadeiras": "fas fa-gamepad",
+
+    // C
+    "Cantadas": "fas fa-comments",
+    "Caridade": "fas fa-hand-holding-dollar",
+    "Carreira": "fas fa-briefcase",
+    "Casamento": "fas fa-ring",
+    "Celebridades": "fas fa-star-half-alt",
+    "Ceticismo": "fas fa-question-circle",
+    "Charme e Elegância": "fas fa-gem",
+    "Cibersegurança": "fas fa-lock",
+    "Citações Famosas": "fas fa-quote-right",
+    "Ciúmes": "fas fa-face-surprise",
+    "Cinema e Filmes": "fas fa-film",
+    "Comédia": "fas fa-laugh",
+    "Comportamento": "fas fa-users",
+    "Conceitos": "fas fa-magnifying-glass",
+    "Conhecimento": "fas fa-graduation-cap",
+    "Conquista Amorosa": "fas fa-venus-mars",
+    "Conquista Pessoal": "fas fa-medal",
+    "Conselhos": "fas fa-comment-dots",
+    "Coragem": "fas fa-fire",
+    "Crenças": "fas fa-cross",
+    "Criatividade": "fas fa-palette",
+    "Crimes": "fas fa-gavel",
+    "Críticas Sociais": "fas fa-balance-scale",
+    "Cultura Asiática": "fas fa-fan",
+    "Cultura Geek": "fas fa-terminal",
+    "Cultura Pop": "fas fa-microphone-alt",
+
+    // D
+    "Decepção": "fas fa-face-frown",
+    "Democracia": "fas fa-landmark",
+    "Desenvolvimento Pessoal": "fas fa-chart-line",
+    "Desafios": "fas fa-bullseye",
+    "Despedida": "fas fa-hand-paper",
+    "Determinação": "fas fa-check-circle",
+    "Deus": "fas fa-pray",
+    "Diagnósticos": "fas fa-stethoscope",
+    "Mundo Digital": "fas fa-desktop",
+    "Direitos Animais": "fas fa-dog",
+    "Direitos Humanos": "fas fa-scale-balanced",
+    "Dinheiro": "fas fa-money-bill-wave",
+    "Discriminação": "fas fa-ban",
+    "Drama": "fas fa-theater-masks",
+
+    // E
+    "Educação": "fas fa-school",
+    "Ego": "fas fa-crown",
+    "Emoções": "fas fa-face-meh",
+    "Empreendedorismo": "fas fa-rocket",
+    "Energia": "fas fa-bolt",
+    "Engenharia": "fas fa-gears",
+    "Escritores Famosos": "fas fa-pen-fancy",
+    "Esporte": "fas fa-futbol",
+    "Espiritualidade": "fas fa-om",
+    "Esperança": "fas fa-hand-sparkles",
+    "Estilo e Moda": "fas fa-tshirt",
+    "Ética": "fas fa-balance-scale-left",
+    "Evolução": "fas fa-dna",
+    "Exército e Forças Armadas": "fas fa-helmet-safety",
+
+    // F
+    "Família": "fas fa-house-chimney",
+    "Fé": "fas fa-pray",
+    "Felicidade": "fas fa-smile-beam",
+    "Feminismo": "fas fa-venus",
+    "Fetiche": "fas fa-mask",
+    "Filosofia": "fas fa-scroll",
+    "Filhos": "fas fa-baby",
+    "Foco": "fas fa-crosshairs",
+    "Força": "fas fa-dumbbell",
+    "Fracasso": "fas fa-exclamation-triangle",
+    "Fraternidade": "fas fa-hands-helping",
+
+    // G
+    "Género": "fas fa-transgender",
+    "Generosidade": "fas fa-hand-holding-heart",
+    "Geografia": "fas fa-map-marked-alt",
+    "Gírias": "fas fa-comment-sms",
+    "Gratidão": "fas fa-hands-clapping",
+    "Guerreiros e Batalhas": "fas fa-sword",
+
+    // H
+    "História": "fas fa-hourglass-half",
+    "Honestidade": "fas fa-hand-point-up",
+    "Horror": "fas fa-skull",
+    "Humor Ácido": "fas fa-face-surprise",
+    "Humor Negro": "fas fa-face-grimace",
+    "Humor": "fas fa-laugh",
+
+    // I
+    "Idosos e Envelhecimento": "fas fa-wheelchair",
+    "Identidade": "fas fa-id-card",
+    "Infelicidade": "fas fa-sad-cry",
+    "Indiretas": "fas fa-feather-pointed",
+    "Infância": "fas fa-teddy-bear",
+    "Inovação": "fas fa-lightbulb",
+    "Inspiração": "fas fa-feather",
+    "Inverno": "fas fa-snowflake",
+    "Inteligência": "fas fa-laptop-code",
+    "Intuição": "fas fa-eye",
+    "Ironia": "fas fa-face-rolling-eyes",
+
+    // J
+    "Jardinagem": "fas fa-plant-wilt",
+    "Jazz": "fas fa-saxophone",
+    "Jogos": "fas fa-dice",
+    "Jornalismo": "fas fa-newspaper",
+    "Juventude": "fas fa-child",
+
+    // L
+    "Lealdade": "fas fa-handshake-angle",
+    "Leitura": "fas fa-book",
+    "Liberdade": "fas fa-dove",
+    "Luto": "fas fa-leaf-maple",
+
+    // M
+    "Marketing": "fas fa-bullhorn",
+    "Matemática": "fas fa-calculator",
+    "Meio Ambiente": "fas fa-tree",
+    "Melancolia": "fas fa-cloud",
+    "Memórias": "fas fa-camera",
+    "Mentiras": "fas fa-face-dizzy",
+    "Metas e Objetivos": "fas fa-dart",
+    "Mistério": "fas fa-user-secret",
+    "Motivação": "fas fa-bolt",
+    "Mudança": "fas fa-shuffle",
+    "Música": "fas fa-music",
+    "Música Clássica": "fas fa-violin",
+    "Música Eletrônica": "fas fa-wave-square",
+    "Música Pop": "fas fa-compact-disc",
+    "Música Sertaneja": "fas fa-guitar",
+    "Música Rock": "fas fa-drum",
+
+    // N
+    "Natal": "fas fa-tree",
+    "Natureza": "fas fa-mountain",
+    "Negócios": "fas fa-briefcase",
+
+    // O
+    "Ódio": "fas fa-angry",
+    "Oportunidades": "fas fa-key",
+    "Otimismo": "fas fa-smile-stars",
+    "Outono": "fas fa-leaf",
+
+    // P
+    "Paixão": "fas fa-heart-pulse",
+    "Paquera": "fas fa-comments-dollar",
+    "Paradoxos": "fas fa-infinity",
+    "Parentalidade": "fas fa-sitemap",
+    "Paz": "fas fa-dove",
+    "Perdão": "fas fa-pray",
+    "Persistência": "fas fa-road",
+    "Picantes": "fas fa-pepper-hot",
+    "Piadas": "fas fa-laugh-squint",
+    "Poesia": "fas fa-scroll",
+    "Política": "fas fa-person-booth",
+    "Políticas e Sociais": "fas fa-people-carry-box",
+    "Primavera": "fas fa-seedling",
+    "Profissões": "fas fa-user-tie",
+    "Progresso": "fas fa-arrow-up-right",
+    "Protesto": "fas fa-megaphone",
+    "Psicologia": "fas fa-brain",
+
+    // Q
+    "Química": "fas fa-atom",
+
+    // R
+    "Racismo": "fas fa-ban",
+    "Rebeldia": "fas fa-fire",
+    "Recomeço": "fas fa-rotate-left",
+    "Redes Sociais": "fas fa-share-nodes",
+    "Reflexão": "fas fa-person-falling",
+    "Relacionamentos": "fas fa-users",
+    "Religião": "fas fa-church",
+    "Resiliência": "fas fa-wrench",
+    "Respeito": "fas fa-hand-point-left",
+    "Responsabilidade": "fas fa-list-check",
+    "Revolta": "fas fa-face-angry",
+    "Ritual": "fas fa-hand-holding-magic",
+    "Romance": "fas fa-book-heart",
+
+    // S
+    "Sabedoria": "fas fa-hat-wizard",
+    "Saúde": "fas fa-hospital",
+    "Saudade": "fas fa-clock-rotate-left",
+    "Sedução": "fas fa-lips",
+    "Sensualidade": "fas fa-whiskey-glass",
+    "Séries de TV": "fas fa-tv",
+    "Sexo": "fas fa-handcuffs",
+    "Silêncio": "fas fa-volume-xmark",
+    "Sociologia": "fas fa-people-line",
+    "Solteirice": "fas fa-user-large",
+    "Status para Redes Sociais": "fas fa-comment-image",
+    "Sucesso": "fas fa-award",
+    "Superação": "fas fa-up-long",
+    "Sustentabilidade": "fas fa-recycle",
+
+    // T
+    "Tecnologia": "fas fa-microchip",
+    "Televisão": "fas fa-display",
+    "Tempo": "fas fa-clock",
+    "Terror": "fas fa-ghost",
+    "Término de Relacionamento": "fas fa-user-slash",
+    "Traição": "fas fa-hand-dots",
+    "Trabalho": "fas fa-hard-hat",
+    "Transparência": "fas fa-eye-dropper",
+
+    // U
+    "União": "fas fa-link",
+    "Urbanismo": "fas fa-city",
+
+    // V
+    "Valores": "fas fa-hand-holding-hand",
+    "Verão": "fas fa-umbrella-beach",
+    "Verdade": "fas fa-check",
+    "Viagem": "fas fa-globe",
+    "Vida": "fas fa-seedling",
+    "Vingança": "fas fa-bomb",
+
+    // Z
+    "Zoologia": "fas fa-cow",
+
+    // Default
+    "default": "fas fa-tag"
+    };
+    
+
+// Função para exibir uma frase aleatória de qualquer categoria
+
+function showRandomFrase() {
+    if (allFrasesData.length === 0) return;
+
+    triggerHapticFeedback(60); 
+    
+    // 1. Sorteia a frase
+    const randomIndex = Math.floor(Math.random() * allFrasesData.length);
+    const fraseAleatoria = allFrasesData[randomIndex];
+
+    // 2. Prepara a UI
+    dom.grid.style.display = 'none';
+    dom.listaFrases.classList.add('active');
+    dom.listaFrases.innerHTML = '';
+    
+    dom.headerTitulo.textContent = "Sorte do Dia";
+    dom.headerIcon.className = "fas fa-dice";
+    dom.layoutControls.style.display = 'flex';
+    dom.headerSpacer.style.display = 'none';
+
+    // 3. Renderiza o card
+    const card = renderFraseCard(fraseAleatoria);
+    card.classList.add('frase-card-animada');
+    
+    // --- CORREÇÃO AQUI ---
+    card.style.cursor = 'pointer'; 
+    card.addEventListener('click', (e) => {
+        // Impede abrir o leitor se clicar nos botões internos
+        if (e.target.closest('.frase-acoes') || e.target.closest('.btn-acao')) {
+            return;
+        }
+        
+        // 1. Configura a lista que o seu openReaderMode exige
+        window.listaAtualParaLeitura = [fraseAleatoria];
+        
+        // 2. Chama o nome CORRETO da função: openReaderMode
+        if (typeof openReaderMode === 'function') {
+            openReaderMode(0); // Abre o primeiro (e único) item da lista
+        } else {
+            console.warn("Função openReaderMode não encontrada!");
+        }
+    });
+
+    dom.listaFrases.appendChild(card);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Evento do botão
+document.getElementById('btn-random').addEventListener('click', showRandomFrase);
+
+    /** Renderiza o Grid de Categorias (Reutilizada para filtro). */
+    /** Renderiza o Grid de Categorias com Contador de Frases */
+    
+    function renderCategoriasGrid(data) {
+    const categoriasMap = new Map(); 
+    
+    // 1. Agrupamento e Contagem
+    data.forEach(frase => {
+        const catNome = frase.categoria ? frase.categoria.trim() : null;
+        if (!catNome) return;
+
+        if (!categoriasMap.has(catNome)) {
+            categoriasMap.set(catNome, {
+                // Prioriza a descrição da categoria se existir no JSON
+                descricao: frase.descricao || "Coleção de frases especiais.",
+                total: 1
+            });
+        } else {
+            categoriasMap.get(catNome).total++;
+        }
+    });
+    
+    // 2. ORGANIZAÇÃO (Escolha uma das opções abaixo)
+    // Opção A: Ordem Alfabética (A-Z)
+    const categoriasOrdenadas = Array.from(categoriasMap.entries())
+        .sort((a, b) => a[0].localeCompare(b[0]));
+
+    /* Opção B: Por Popularidade (Categorias com mais frases primeiro)
+       const categoriasOrdenadas = Array.from(categoriasMap.entries())
+           .sort((a, b) => b[1].total - a[1].total);
+    */
+
+    allCategories = categoriasOrdenadas.map(entry => entry[0]); 
+    dom.grid.innerHTML = ''; 
+    
+    if (categoriasOrdenadas.length === 0) {
+        dom.grid.innerHTML = '<p id="status-message">Nenhuma categoria encontrada.</p>';
+        return;
+    }
+    
+    // 3. Renderização
+    categoriasOrdenadas.forEach(([nome, info]) => {
+        const iconClass = iconMap[nome] || iconMap['default'];
+        const card = document.createElement('div');
+        card.className = 'categoria-card ripple';
+        
+        card.innerHTML = `
+            <span class="categoria-contador">${info.total}</span>
+            <i class="${iconClass}"></i> 
+            <p>${nome}</p>
+            <small class="categoria-descricao">${info.descricao}</small>
+        `;
+        
+        card.addEventListener('click', () => navigateToFrases(nome));
+        card.addEventListener('mousedown', applyRippleEffect);
+        card.addEventListener('touchstart', applyRippleEffect);
+
+        dom.grid.appendChild(card);
+    });
+    
+    if (dom.loadingMessage) dom.loadingMessage.style.display = 'none';
+}
+    // --- CONTROLE DE LAYOUT (Ajuste 1) ---
+
+    /** Altera o modo de exibição das frases (list, grid, compact) */
+    function setLayout(mode) {
+        currentLayout = mode;
+        localStorage.setItem(KEY_LAYOUT, mode);
+        
+        // Remove classes de modo anteriores
+        dom.listaFrases.classList.remove('mode-grid', 'mode-compact');
+        
+        // Adiciona a classe correspondente se não for o padrão 'list'
+        if (mode === 'grid') dom.listaFrases.classList.add('mode-grid');
+        if (mode === 'compact') dom.listaFrases.classList.add('mode-compact');
+
+        // Atualiza os botões na UI
+        document.querySelectorAll('.btn-layout').forEach(btn => {
+            btn.classList.toggle('active', btn.id === `btn-layout-${mode}`);
+        });
+
+        triggerHapticFeedback(10);
+    }
+
+    // --- CARREGAMENTO INICIAL (Seu Código com Ajustes de Segurança) ---
+
+    async function fetchFrases() {
+        try {
+            const response = await fetch(FRASES_URL); 
+            if (!response.ok) throw new Error(`Status: ${response.status}`);
+            
+            const data = await response.json(); 
+            allFrasesData = Array.isArray(data) ? data : data.frases || [];
+        } catch (error) {
+            console.error("Falha ao carregar frases:", error);
+            if(dom.loadingMessage) dom.loadingMessage.textContent = "Erro ao carregar o arquivo JSON.";
+        }
+    }
+
+    async function loadCategorias() {
+    if (dom.grid) {
+        // Mostra 6 cards vazios pulsando
+        dom.grid.innerHTML = Array(6).fill('<div class="skeleton skeleton-card"></div>').join('');
+    }
+
+    await fetchFrases();
+
+    if (allFrasesData.length === 0) {
+        dom.grid.innerHTML = '<p id="status-message">Ops! Sem conexão ou frases não encontradas.</p>';
+        return;
+    }
+    
+    renderCategoriasGrid(allFrasesData);
+    setLayout(currentLayout);
+}
+    
+    // --------------------------------
+    // INICIALIZAÇÃO E EVENTOS
+    // --------------------------------
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        loadSettings(); 
+        
+        // Ripple no botão voltar
+        if (dom.btnVoltar) {
+            dom.btnVoltar.addEventListener('mousedown', applyRippleEffect);
+            dom.btnVoltar.addEventListener('touchstart', applyRippleEffect);
+        }
+        
+        // Eventos da barra de pesquisa
+        dom.searchBar.addEventListener('input', (e) => updateSuggestions(e.target.value));
+        dom.searchBar.addEventListener('focus', (e) => updateSuggestions(e.target.value));
+        
+        dom.searchBar.addEventListener('blur', () => {
+            setTimeout(clearSuggestions, 200); 
+        });
+        
+        dom.clearSearchBtn.addEventListener('click', clearSearch);
+        
+        dom.searchBar.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && dom.searchBar.value.length >= 2) {
+                const query = dom.searchBar.value;
+                clearSuggestions();
+                filterAndRenderFrasesOnPage(null, query); 
+            }
+        });
+        
+        // Inicializa o app
+        loadCategorias(); 
+    });
+</script>
+</body> 
+</html>

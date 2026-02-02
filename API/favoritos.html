@@ -1,0 +1,842 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Frases Favoritas</title>
+    
+    <link href="assets/fontawesome/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/estilo-global.css">
+
+<script src="assets/js/config-global.js"></script>
+    <script>
+    (function() {
+        // Busca a preferência salva (padrão 100% se não existir)
+        const fonteSalva = localStorage.getItem('appFontePerc') || '100';
+        
+        // Calcula o valor em pixels (16px * percentagem)
+        const tamanhoCalculado = (fonteSalva / 100) * 16;
+        
+        // Aplica imediatamente ao root antes da página renderizar (evita o "pulo" visual)
+        document.documentElement.style.setProperty('--fonte-base', tamanhoCalculado + 'px');
+    })();
+</script>
+    <script>
+        // --------------------------------
+        // VARIÁVEIS DE CONFIGURAÇÃO E DADOS
+        // --------------------------------
+        const themeKey = 'appTheme';
+        const corKey = 'appCorDestaque';
+        const fundoKey = 'appCorFundo';
+        const corTextoKey = 'appCorTexto';
+        const corPadrao = '#e91e63'; 
+        const fundoPadrao = '#eef2f5'; 
+        const corTextoPadrao = '#1c274b'; 
+        
+        // Chaves de Feedback e Armazenamento
+        const KEY_VIBRACAO = 'prefVibracao';
+        const KEY_SOM = 'prefSomClique';
+        const KEY_FAVORITOS = 'frasesFavoritas'; // CHAVE CORRETA
+        const KEY_HISTORICO = 'frasesHistorico';
+
+        /**
+         * Aplica as configurações de tema e cor salvas no localStorage.
+         */
+        function loadSettings() {
+            const savedTheme = localStorage.getItem(themeKey);
+            const savedDestaque = localStorage.getItem(corKey);
+            const savedFundo = localStorage.getItem(fundoKey);
+            const savedTexto = localStorage.getItem(corTextoKey);
+            
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            let isDarkMode = (savedTheme === 'dark') || (!savedTheme && prefersDark);
+            
+            if (document.body) {
+                if (isDarkMode) {
+                    document.body.classList.add('theme-escuro');
+                } else {
+                    document.body.classList.remove('theme-escuro');
+                }
+            }
+            
+            const finalFundo = savedFundo || (isDarkMode ? '#121212' : fundoPadrao);
+            const finalTexto = savedTexto || (isDarkMode ? '#f0f0f0' : corTextoPadrao);
+
+            document.documentElement.style.setProperty('--cor-destaque', savedDestaque || corPadrao);
+            document.documentElement.style.setProperty('--cor-fundo-principal', finalFundo);
+            document.documentElement.style.setProperty('--cor-texto-principal', finalTexto);
+        }
+        
+        loadSettings();
+    </script>
+
+    <style>
+        /* ESTILOS CSS REPETIDOS DO CATEGORIAS.HTML (Para consistência) */
+        
+        /* FONTE */
+        @font-face {
+            font-family: 'Nunito';
+            src: url('../assets/fontes/Nunito-VariableFont_wght.ttf') format('truetype');
+            font-weight: 100 900;
+        }
+
+        /* -------------------------------- */
+        /* 0. VARIÁVEIS E TEMAS (Glassmorphism Base) */
+        /* -------------------------------- */
+        :root {
+            --cor-fundo-principal: #eef2f5; --cor-texto-principal: #1c274b; --cor-card-fundo: #ffffff; --cor-destaque: #e91e63;
+            --cor-sombra: rgba(28, 39, 75, 0.15); --cor-glass-fundo: rgba(255, 255, 255, 0.25); --cor-glass-borda: rgba(255, 255, 255, 0.7);
+            --cor-particula-1: var(--cor-destaque); --cor-particula-2: var(--cor-texto-principal); --fonte-base: 16px; --borda-raio: 1.5rem; --duracao-animacao: 0.5s;
+        }
+        .theme-escuro {
+            --cor-fundo-principal: #121212; --cor-texto-principal: #f0f0f0; --cor-card-fundo: #1e1e1e; --cor-sombra: rgba(0, 0, 0, 0.5);
+            --cor-glass-fundo: rgba(255, 255, 255, 0.05); --cor-glass-borda: rgba(255, 255, 255, 0.15); --cor-particula-1: var(--cor-destaque); 
+            --cor-particula-2: var(--cor-texto-principal); 
+        }
+
+        /* Reset Básico e Body */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { font-size: var(--fonte-base); }
+        body {
+            font-family: 'Nunito', sans-serif; background-color: var(--cor-fundo-principal); color: var(--cor-texto-principal);
+            min-height: 100vh; transition: background-color var(--duracao-animacao), color var(--duracao-animacao);
+            padding-top: 5rem; padding-bottom: 3rem; 
+        }
+        .container { width: 100%; max-width: 100%; margin: 0 auto; padding: 1.5rem; position: relative; z-index: 10; }
+
+        /* Fundo Animado */
+        .fundo-animado { position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; z-index: -1; }
+        .fundo-animado::before, .fundo-animado::after { content: ''; position: absolute; width: 15rem; height: 15rem; border-radius: 50%; opacity: 0.3; animation: flutuar 20s infinite ease-in-out; pointer-events: none; }
+        .fundo-animado::before { background-color: var(--cor-particula-1); top: 10vh; left: 5vw; }
+        .fundo-animado::after { background-color: var(--cor-particula-2); bottom: 15vh; right: 5vw; animation-delay: -10s; }
+        @keyframes flutuar { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(15vw, 15vh) scale(1.1); } }
+
+        /* Cabeçalho */
+        .cabecalho-principal {
+            display: flex; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 50%; transform: translateX(-50%); 
+            width: 100%; max-width: 95%; padding: 1rem 1.5rem; background-color: var(--cor-fundo-principal); 
+            box-shadow: 0 2px 10px var(--cor-sombra); z-index: 50;
+            border-radius: 1.5rem;
+            margin-top: 1rem;
+        }
+        .cabecalho-principal h1 { font-size: 1.75rem; color: var(--cor-destaque); font-weight: 800; position: absolute; left: 50%; transform: translateX(-50%); }
+        .btn-voltar { background: none; border: none; color: var(--cor-texto-principal); font-size: 1.5rem; cursor: pointer; padding: 0.5rem; border-radius: 50%; transition: all 0.2s; }
+
+        /* Ripple Effect */
+        .ripple {position: relative;overflow: hidden;}
+        .ripple-effect {position: absolute;border-radius: 50%;transform: scale(0);animation: ripple-anim 0.6s linear;background-color: rgba(255, 255, 255, 0.7);pointer-events: none;}
+        .theme-escuro .ripple-effect {background-color: rgba(255, 255, 255, 0.1);}
+        @keyframes ripple-anim {to {transform: scale(4);opacity: 0;}}
+        
+        /* -------------------------------- */
+        /* ESTILOS ESPECÍFICOS DE CONTEÚDO */
+        /* -------------------------------- */
+        
+        /* LISTA DE FRASES */
+        .frases-lista {
+            display: flex; flex-direction: column; gap: 1.5rem; padding-top: 1rem;
+        }
+        
+        .frase-card {
+            background: var(--cor-glass-fundo); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); 
+            border: 1px solid var(--cor-glass-borda); box-shadow: 0 0.5rem 2rem 0 rgba(31, 38, 135, 0.1);
+            padding: 1.5rem; border-radius: var(--borda-raio);
+        }
+
+        .frase-texto { font-size: 1.25rem; font-style: italic; margin-bottom: 0.75rem; line-height: 1.5; }
+        .frase-autor {
+            display: block; text-align: right; font-size: 0.9rem; font-weight: 600;
+            color: var(--cor-texto-principal); opacity: 0.7; padding-bottom: 1rem; border-bottom: 1px dashed var(--cor-glass-borda);
+        }
+
+        .frase-acoes { display: flex; justify-content: space-around; padding-top: 1rem; }
+        .btn-acao { background: none; border: none; color: var(--cor-texto-principal); cursor: pointer; font-size: 1.5rem; padding: 0.5rem; border-radius: 50%; transition: color 0.2s; }
+        .btn-acao:hover { color: var(--cor-destaque); }
+        .btn-favoritar.favoritado { color: var(--cor-destaque); }
+        
+        #status-message { text-align: center; padding: 40px 0; font-size: 1.1rem; color: var(--cor-texto-principal); opacity: 0.7; }
+        
+        /* ================== Geral e Reset ================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Nunito', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+:focus, :active, a:focus, a:active, button:focus, button:active, input:focus, input:active, select:focus, select:active, textarea:focus, textarea:active {
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+    .fas ,fa{
+    animation: pulse 3s infinite;
+    color: var(--cor-destaque);
+}
+    
+        /* --- EFEITOS / ANIMAÇÕES --- */
+    .fade-out { animation:fadeOut 0.5s ease-in-out forwards; }
+    @keyframes fadeIn { from{opacity:0;transform:scale(0.9);} to{opacity:1;transform:scale(1);} }
+    @keyframes fadeOut { from{opacity:1;} to{opacity:0;visibility:hidden;} }
+    @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.2);} }
+    @keyframes bounce { 0%,80%,100%{transform:scale(0.8);} 40%{transform:scale(1.2);} }
+}
+
+/* --- TOOLBAR DE FAVORITOS (ESTILO GLASS COM RESPIRO) --- */
+
+.historico-toolbar {
+    width: 100%; 
+    background: var(--cor-glass-fundo);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--cor-glass-borda);
+    border-radius: var(--borda-raio);
+    
+    /* Aumentado para os inputs não tocarem a borda do vidro */
+    padding: 1.5rem; 
+    
+    /* Espaçamento em relação ao Header e à Lista de Frases */
+    margin-top: 1rem;
+    margin-bottom: 0.5rem; 
+    
+    display: flex;
+    flex-direction: column;
+    
+    /* Distância vertical entre a Busca e o Filtro/Botão */
+    gap: 1.2rem; 
+    
+    box-shadow: 0 0.5rem 2rem 0 rgba(0, 0, 0, 0.1);
+}
+
+/* BUSCA - OCUPANDO 100% */
+.busca-container {
+    margin-bottom: 0.5rem; 
+    width: 100%; 
+    display: flex;
+    align-items: center;
+    background: var(--cor-glass-fundo);
+    padding: 0.85rem 1.2rem;
+    border-radius: var(--borda-raio);
+    border: 1px solid var(--cor-glass-borda);
+    box-shadow: 0 0.5rem 1.5rem 0 rgba(31, 38, 135, 0.1);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    transition: all 0.3s ease;
+}
+
+.busca-container:focus-within {
+    border-color: var(--cor-destaque);
+    box-shadow: 0 0 0 1px var(--cor-destaque);
+}
+
+.input-estilizado {
+    width: 100%;
+    border: none;
+    outline: none;
+    flex-grow: 1;
+    padding: 0 0.75rem;
+    font-size: 1rem;
+    background: transparent;
+    color: var(--cor-texto-principal);
+}
+
+.icon-busca {
+    color: var(--cor-destaque);
+    font-size: 1.1rem;
+}
+
+/* LINHA DE FILTROS E BOTÃO */
+.controles-linha {
+    width: 100%;
+    display: flex;
+    gap: 12px; 
+    align-items: stretch; /* Faz o select e o botão terem a mesma altura */
+}
+
+.select-estilizado {
+    flex: 1; 
+    border: 1px solid var(--cor-glass-borda);
+    background: var(--cor-glass-fundo);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    color: var(--cor-texto-principal);
+    cursor: pointer;
+    padding: 0.85rem 1.2rem;
+    border-radius: var(--borda-raio);
+    font-size: 1rem;
+    box-shadow: 0 0.5rem 1.5rem 0 rgba(31, 38, 135, 0.1);
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.btn-limpar-tudo {
+    background: rgba(var(--cor-destaque-rgb, 233, 30, 99), 0.1) !important;
+    color: var(--cor-texto-principal) !important;
+    border: 1px solid var(--cor-glass-borda);
+    border-radius: var(--borda-raio);
+    padding: 0 1.2rem;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    min-width: 55px; /* Garante que o botão não fique esmagado */
+}
+
+.btn-limpar-tudo:active {
+    transform: scale(0.95);
+}
+
+.input-estilizado::placeholder {
+    color: var(--cor-texto-principal);
+    opacity: 0.5;
+}
+    
+    </style>
+</head>
+
+<body> 
+    <div class="fundo-animado"></div>
+
+    <header class="cabecalho-principal">
+        <button onclick="window.location.href = 'index.html'" class="btn-voltar ripple" aria-label="Voltar para Início">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h1 id="header-titulo"> <i class="fas fa-star"></i>Favoritos</h1>
+        <div style="width: 2.5rem; visibility: hidden;"></div> 
+    </header>
+
+    <div class="container">
+        
+        <div class="historico-toolbar">
+    <div class="busca-container">
+        <i class="fas fa-search icon-busca"></i>
+        <input type="text" id="input-busca" class="input-estilizado" placeholder="Procurar frase nos favoritos...">
+    </div>
+    
+    <div class="controles-linha">
+        <select id="filtro-categoria" class="select-estilizado">
+            <option value="todos">Todas Categorias</option>
+        </select>
+        
+        <button id="btn-limpar-favoritos" class="btn-limpar-tudo ripple" title="Remover todos os favoritos">
+            <i class="fas fa-trash-alt"></i>
+        </button>
+    </div>
+</div>
+        
+        <section id="frases-lista" class="frases-lista">
+            <p id="status-message">Carregando seus favoritos...</p>
+        </section>
+    </div>
+    
+    <script>
+        // --------------------------------
+        // JAVASCRIPT
+        // --------------------------------
+        
+        // Elementos DOM
+        // 1. Definição correta do objeto DOM
+const dom = {
+    listaFrases: document.getElementById('frases-lista'),
+    btnVoltar: document.querySelector('.btn-voltar'),
+    inputBusca: document.getElementById('input-busca'),
+    filtroCat: document.getElementById('filtro-categoria'),
+    btnLimpar: document.getElementById('btn-limpar-favoritos')
+};
+
+// 2. Atribuição de Eventos (Isso deve ficar fora do objeto, de preferência dentro do DOMContentLoaded)
+function configurarEventos() {
+    if (dom.inputBusca) dom.inputBusca.addEventListener('input', filtrarFavoritos);
+    if (dom.filtroCat) dom.filtroCat.addEventListener('change', filtrarFavoritos);
+    if (dom.btnLimpar) dom.btnLimpar.addEventListener('click', handleLimparFavoritosTotal);
+}
+
+// 3. Chame a configuração de eventos quando a página carregar
+document.addEventListener('DOMContentLoaded', () => {
+    configurarEventos();
+    renderFavoritos();
+    atualizarCategoriasNoSelect();
+});
+        
+        // --------------------------------
+        // FUNÇÕES DE GERENCIAMENTO DE DADOS (LocalStorage)
+        // --------------------------------
+
+        /** Retorna uma lista de objetos salvos no LocalStorage. */
+        function getSavedItems(key) {
+            try {
+                const json = localStorage.getItem(key);
+                return json ? JSON.parse(json) : [];
+            } catch (e) {
+                console.error(`Erro ao carregar dados de ${key}:`, e);
+                return [];
+            }
+        }
+
+        /** Salva a lista atualizada no LocalStorage. */
+        function saveItems(key, items) {
+            try {
+                localStorage.setItem(key, JSON.stringify(items));
+            } catch (e) {
+                console.error(`Erro ao salvar dados em ${key}:`, e);
+            }
+        }
+
+        // --------------------------------
+        // LÓGICA DE ID E FAVORITOS (PADRONIZADA E CORRIGIDA)
+        // --------------------------------
+
+        /** * Cria um ID único consistente para a frase. */
+        function getFraseId(frase) {
+            if (!frase || !frase.texto) return null;
+            
+            // Garante que o ID é consistente com as outras telas
+            const autorNormalizado = (frase.autor && frase.autor.trim()) || 'Sem Autor';
+            
+            return `${frase.texto}-${autorNormalizado}`;
+        }
+
+        /** Adiciona uma frase ao histórico (Função de stub para compatibilidade). */
+        function addToHistorico(frase) {
+            if (!frase || !frase.texto) return;
+            // No favoritos.html, esta função apenas garante que não quebre se chamada.
+        }
+
+        /** Verifica se uma frase está na lista de favoritos. */
+        function isFavorited(frase) {
+            const favoritos = getSavedItems(KEY_FAVORITOS);
+            const idParaBuscar = getFraseId(frase); 
+            if (!idParaBuscar) return false;
+            
+            return favoritos.some(item => getFraseId(item) === idParaBuscar);
+        }
+
+        /** Adiciona ou remove uma frase dos favoritos. */
+        function toggleFavorite(frase) {
+            if (!frase || !frase.texto) return false;
+
+            let favoritos = getSavedItems(KEY_FAVORITOS);
+            const idParaBuscar = getFraseId(frase);
+            if (!idParaBuscar) return false;
+
+            const indiceExistente = favoritos.findIndex(item => getFraseId(item) === idParaBuscar);
+
+            if (indiceExistente !== -1) {
+                // Remover
+                favoritos.splice(indiceExistente, 1);
+                saveItems(KEY_FAVORITOS, favoritos);
+                return false;
+            } else {
+                // Adicionar
+                favoritos.push({ ...frase, id: idParaBuscar });
+                saveItems(KEY_FAVORITOS, favoritos);
+                return true;
+            }
+        }
+        
+        // --- FUNÇÕES DE FEEDBACK E UI (Mantidas) ---
+        
+        function playClickSound() {
+            const isSomEnabled = localStorage.getItem(KEY_SOM) !== 'false'; 
+            if (isSomEnabled) {
+                const clickSound = new Audio('assets/sound/click.mp3');
+                clickSound.volume = 0.5;
+                clickSound.play().catch(e => console.log("A reprodução do som foi impedida:", e));
+            }
+        }
+
+        function triggerHapticFeedback(pattern = 20) {
+            const isVibracaoEnabled = localStorage.getItem(KEY_VIBRACAO) !== 'false';
+            if (navigator.vibrate && isVibracaoEnabled) {
+                navigator.vibrate(pattern);
+            }
+        }
+
+        /** Adiciona o efeito Ripple (onda de clique) ao elemento. */
+        function applyRippleEffect(e) {
+            const target = e.currentTarget;
+            triggerHapticFeedback(20);
+            playClickSound();
+
+            const rect = target.getBoundingClientRect();
+            const oldRipple = target.querySelector('.ripple-effect');
+            if (oldRipple) oldRipple.remove();
+
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+
+            const newRipple = document.createElement('span');
+            newRipple.classList.add('ripple-effect');
+            
+            newRipple.style.width = newRipple.style.height = size + 'px';
+            newRipple.style.left = x + 'px';
+            newRipple.style.top = y + 'px';
+            
+            target.appendChild(newRipple);
+
+            newRipple.addEventListener('animationend', () => {
+                newRipple.remove();
+            });
+        }
+        
+        // --- AÇÕES DO CARD ---
+
+        /** Função de fallback (método antigo) para copiar texto. */
+        function fallbackCopyTextToClipboard(text) {
+            let textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed"; 
+            textArea.style.opacity = "0";     
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                return successful;
+            } catch (err) {
+                console.error('Falha ao usar fallback copy: ', err);
+                return false;
+            } finally {
+                document.body.removeChild(textArea);
+            }
+        }
+        
+
+/** 1. Lida com a cópia de texto com feedback visual e sonoro */
+function handleCopiar(texto, event) {
+    const button = event.currentTarget;
+    triggerHapticFeedback(20);
+
+    const sucessoCopia = () => {
+        button.innerHTML = '<i class="fas fa-check"></i>'; 
+        triggerHapticFeedback(75);
+        // Exibe o seu CustomModal via alert interceptado
+        alert("Texto copiado para a área de transferência!");
+        setTimeout(() => {
+            button.innerHTML = '<i class="fas fa-copy"></i>';
+        }, 1200);
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(texto)
+            .then(sucessoCopia)
+            .catch(() => { 
+                if (fallbackCopyTextToClipboard(texto)) sucessoCopia();
+                else alert("Falha ao copiar. Tente selecionar manualmente.");
+            });
+    } else {
+        if (fallbackCopyTextToClipboard(texto)) sucessoCopia();
+        else alert("Navegador incompatível com cópia automática.");
+    }
+}
+
+/** 2. Lida com o favoritar/desfavoritar com confirmação no desfavoritar */
+function handleFavoritar(fraseJsonString, event) {
+    const button = event.currentTarget;
+    let frase;
+
+    try {
+        frase = JSON.parse(decodeURIComponent(fraseJsonString)); 
+    } catch (e) {
+        console.error("Erro ao processar frase:", e);
+        return;
+    }
+
+    const acaoFavoritar = () => {
+        const isFavoritadoNow = toggleFavorite(frase); 
+        button.classList.toggle('favoritado', isFavoritadoNow); 
+        triggerHapticFeedback(isFavoritadoNow ? 50 : 25);
+        
+        alert(isFavoritadoNow ? "Adicionada aos favoritos!" : "Removida dos favoritos!");
+
+        if (!isFavoritadoNow) {
+            setTimeout(() => {
+                if (typeof renderFavoritos === 'function') renderFavoritos();
+                if (typeof atualizarCategoriasNoSelect === 'function') atualizarCategoriasNoSelect();
+            }, 300);
+        }
+    };
+
+    // Se já estiver favoritado, pede confirmação antes de remover
+    if (button.classList.contains('favoritado')) {
+        window.CustomModal.show({
+            titulo: "Remover Favorito",
+            mensagem: "Deseja remover esta frase da sua lista de favoritos?",
+            tipo: "confirm",
+            icone: "fa-heart-broken",
+            aoConfirmar: acaoFavoritar
+        });
+    } else {
+        acaoFavoritar();
+    }
+}
+
+/** 3. Lida com o compartilhamento nativo */
+function handlePartilhar(texto, event) {
+    if (navigator.share) {
+        navigator.share({ 
+            title: 'Frase Inspiradora', 
+            text: texto, 
+            url: window.location.href, 
+        })
+        .then(() => triggerHapticFeedback(50))
+        .catch(error => {
+            if (error.name !== "AbortError") console.error('Erro ao partilhar:', error);
+        });
+    } else {
+        // Usa o CustomModal para avisar que vai copiar por falta de suporte nativo
+        window.CustomModal.show({
+            titulo: "Compartilhar",
+            mensagem: "Seu dispositivo não suporta compartilhamento direto. Vamos copiar o texto para você colar onde desejar!",
+            icone: "fa-share-alt",
+            aoConfirmar: () => handleCopiar(texto, event)
+        });
+    }
+}
+
+// --- RENDERIZAÇÃO ---
+        
+/** Renderiza um card de frase na lista. */
+function renderFraseCard(frase) {
+    const card = document.createElement('div');
+    card.className = 'frase-card';
+    
+    // Verifica o estado real do favorito 
+    const isFavorito = isFavorited(frase); 
+
+    // 🚨 CORREÇÃO CRUCIAL: Sanitização Robusta para INJEÇÃO NO ONCLICK
+    let cleanFraseJson = JSON.stringify(frase);
+    
+    // 1. Escapa as aspas simples ('') e aspas duplas ("")
+    cleanFraseJson = cleanFraseJson.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    
+    // 2. Remove todas as quebras de linha ou tabs
+    cleanFraseJson = cleanFraseJson.replace(/[\n\r\t]/g, ' '); 
+
+    // Sanitização para a string de texto no handleCopiar e handlePartilhar
+    let cleanText = frase.texto;
+    cleanText = cleanText.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    cleanText = cleanText.replace(/[\n\r\t]/g, ' '); 
+
+    card.innerHTML = `
+        <h3 class="frase-categoria" style="
+    position: absolute;
+    top: 15px;      /* Ajuste conforme seu gosto */
+    left: 15px;    /* Ajuste conforme seu gosto */
+    z-index: 99;    /* Garante que fique acima de tudo */
+    display: flex;
+    pointer-events: none; /* Evita que o clique no badge atrapalhe o link */
+    transform: none !important; 
+    background: rgba(var(--cor-destaque-rgb, 233, 30, 99), 0.1);
+    color: var(--cor-texto-principal);
+    font-size: 1rem;
+    font-weight: 800;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 5px;
+    border-radius: var(--borda-raio);
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(var(--cor-destaque-rgb, 233, 30, 99), 0.2);
+    transition: transform 0.3s ease;
+        "> ${frase.categoria}</h3>
+        <p class="frase-texto" style="margin-top:1.5rem;">${frase.texto}</p>
+        <span class="frase-autor">— ${frase.autor}</span>
+    <div class="frase-acoes">
+        <button class="btn-acao ripple" onclick="handleCriarImagem('${cleanText}', '${frase.autor}', '${frase.categoria}', event)" title="Criar Imagem">
+            <i class="fas fa-image"></i>
+        </button>
+
+        <button class="btn-acao ripple" onclick="handleCopiar('${cleanText}', event)">
+            <i class="fas fa-copy"></i>
+        </button>
+        
+        <button class="btn-acao btn-favoritar ripple ${isFavorito ? 'favoritado' : ''}" onclick="handleFavoritar('${cleanFraseJson}', event)">
+            <i class="fas fa-heart"></i>
+        </button>
+        
+        <button class="btn-acao ripple" onclick="handlePartilhar('${cleanText}', event)">
+            <i class="fas fa-share-alt"></i>
+        </button>
+    </div>
+    `;
+    
+    card.querySelectorAll('.ripple').forEach(btn => {
+        btn.addEventListener('mousedown', applyRippleEffect);
+        btn.addEventListener('touchstart', applyRippleEffect);
+    });
+    
+    addToHistorico(frase); 
+
+    return card;
+}
+
+        /** Carrega e renderiza a lista de frases favoritas. */
+        function renderFavoritos() {
+            const favoritos = getSavedItems(KEY_FAVORITOS);
+            
+            dom.listaFrases.innerHTML = ''; 
+
+            if (favoritos.length === 0) {
+                 const msg = document.createElement('p');
+                 msg.id = 'status-message';
+                 msg.textContent = "Você ainda não tem frases favoritas. Adicione algumas na tela de Categorias!";
+                 dom.listaFrases.appendChild(msg);
+                 return;
+            }
+
+            favoritos.forEach(item => {
+                dom.listaFrases.appendChild(renderFraseCard(item));
+            });
+        }
+        
+        /** Envia a frase favorita para o editor de imagens */
+function handleCriarImagem(texto, autor, categoria, e) {
+    if (e) e.stopPropagation();
+    
+    triggerHapticFeedback(40);
+    playClickSound();
+
+    // Criamos o objeto EXATAMENTE como o editor espera ler
+    const dadosParaEditor = {
+        textoFrase: texto,
+        textoAutor: autor || "Anônimo"
+    };
+
+    // Salva no LocalStorage para o frases-imagem.html ler
+    localStorage.setItem('dados_edicao_simples', JSON.stringify(dadosParaEditor));
+    
+    // Redireciona para o editor
+    window.location.href = 'frases-imagem.html'; 
+}
+
+/** Função de busca blindada contra erros de 'null' para Favoritos */
+function filtrarFavoritos() {
+    const termo = dom.inputBusca ? dom.inputBusca.value.toLowerCase() : "";
+    const categoria = dom.filtroCat ? dom.filtroCat.value : "todos";
+    const cards = dom.listaFrases.querySelectorAll('.frase-card');
+    const msgVazio = document.getElementById('status-message');
+    
+    let encontrados = 0;
+
+    cards.forEach(card => {
+        const textoElemento = card.querySelector('.frase-texto');
+        const catElemento = card.querySelector('.frase-categoria');
+        
+        if (textoElemento && catElemento) {
+            const texto = textoElemento.innerText.toLowerCase();
+            const catCard = catElemento.innerText.trim();
+            
+            const bateBusca = texto.includes(termo);
+            const bateCategoria = (categoria === 'todos' || catCard === categoria);
+
+            if (bateBusca && bateCategoria) {
+                card.style.display = 'block';
+                encontrados++;
+            } else {
+                card.style.display = 'none';
+            }
+        }
+    });
+
+    // Atualiza a mensagem de status se nada for encontrado
+    if (msgVazio) {
+        if (encontrados === 0 && cards.length > 0) {
+            msgVazio.textContent = "Nenhuma frase encontrada nos seus favoritos.";
+            msgVazio.style.display = 'block';
+        } else if (cards.length === 0) {
+            msgVazio.textContent = "Você ainda não tem favoritos.";
+            msgVazio.style.display = 'block';
+        } else {
+            msgVazio.style.display = 'none';
+        }
+    }
+}
+
+/** Limpa todos os favoritos com atualização total da UI utilizando o CustomModal */
+function handleLimparFavoritosTotal() {
+    window.CustomModal.show({
+        titulo: "Limpar Favoritos",
+        mensagem: "Deseja remover TODOS os seus favoritos permanentemente? Esta ação não pode ser desfeita.",
+        tipo: "confirm",
+        icone: "fa-trash-alt",
+        aoConfirmar: () => {
+            // 1. Feedback tátil
+            if (typeof triggerHapticFeedback === 'function') triggerHapticFeedback(50);
+            
+            // 2. Limpa o LocalStorage
+            const chaveParaLimpar = typeof KEY_FAVORITOS !== 'undefined' ? KEY_FAVORITOS : 'favoritos';
+            localStorage.setItem(chaveParaLimpar, JSON.stringify([]));
+
+            // 3. Limpa os campos de interface para evitar filtros órfãos
+            if (dom.inputBusca) dom.inputBusca.value = '';
+            if (dom.filtroCat) dom.filtroCat.value = 'todos';
+
+            // 4. Atualiza a interface
+            if (typeof renderFavoritos === 'function') renderFavoritos();
+            if (typeof atualizarCategoriasNoSelect === 'function') atualizarCategoriasNoSelect();
+            
+            // 5. Feedback de sucesso (Usando o seu modal via interceptor de alert)
+            setTimeout(() => {
+                alert("Todos os favoritos foram removidos com sucesso.");
+            }, 300);
+        }
+    });
+}
+
+/** Atualiza as opções do Select baseado nas frases que estão nos favoritos */
+function atualizarCategoriasNoSelect() {
+    if (!dom.filtroCat) return;
+    
+    // Tenta pegar de 'favoritos' ou da sua constante KEY_FAVORITOS
+    const favoritos = getSavedItems(KEY_FAVORITOS || 'favoritos'); 
+    
+    // Extrai categorias, remove nulos/vazios e remove duplicatas
+    const categorias = [...new Set(favoritos.map(item => item.categoria))]
+                        .filter(cat => cat && cat.trim() !== "");
+    
+    // Ordena alfabeticamente
+    categorias.sort();
+
+    dom.filtroCat.innerHTML = '<option value="todos">Todas Categorias</option>';
+    
+    categorias.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.innerText = cat;
+        dom.filtroCat.appendChild(opt);
+    });
+    
+    console.log("Categorias carregadas no select:", categorias);
+}
+        
+        // --------------------------------
+        // INICIALIZAÇÃO
+        // --------------------------------
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            if (dom.btnVoltar) {
+                dom.btnVoltar.addEventListener('mousedown', applyRippleEffect);
+                dom.btnVoltar.addEventListener('touchstart', applyRippleEffect);
+            }
+            
+            renderFavoritos();
+            renderFavoritos();
+            atualizarCategoriasNoSelect();
+        });
+        
+    </script>
+</body>
+</html>

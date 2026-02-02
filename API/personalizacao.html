@@ -1,0 +1,966 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personalização</title>
+    <link href="assets/fontawesome/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/estilo-global.css">
+
+<script src="assets/js/config-global.js"></script>
+    
+  <script>
+    (function() {
+        // Busca a preferência salva (padrão 100% se não existir)
+        const fonteSalva = localStorage.getItem('appFontePerc') || '100';
+        
+        // Calcula o valor em pixels (16px * percentagem)
+        const tamanhoCalculado = (fonteSalva / 100) * 16;
+        
+        // Aplica imediatamente ao root antes da página renderizar (evita o "pulo" visual)
+        document.documentElement.style.setProperty('--fonte-base', tamanhoCalculado + 'px');
+    })();
+</script>
+  <script>
+    // ===================================
+    // 1. CHAVES DE PREFERÊNCIA
+    // ===================================
+    const themeKey = 'appTheme';
+    const corKey = 'appCorDestaque';
+    const fundoKey = 'appCorFundo';
+    const corTextoKey = 'appCorTexto';
+    const corPadrao = '#e91e63'; 
+    const fundoPadrao = '#eef2f5'; 
+    const corTextoPadrao = '#1c274b'; 
+
+    // CHAVES DE FEEDBACK (Necessárias para verificar o estado salvo)
+    const KEY_VIBRACAO = 'prefVibracao';
+    const KEY_SOM = 'prefSomClique';
+    
+    // Objeto de Áudio (Deve ser acessível para as funções de feedback)
+    const clickSound = new Audio('assets/sound/click.mp3');
+
+
+    // ===================================
+    // 2. FUNÇÃO DE CARREGAMENTO (Executada no <head>)
+    // ===================================
+    function loadSettings() {
+        const savedTheme = localStorage.getItem(themeKey);
+        const savedDestaque = localStorage.getItem(corKey);
+        const savedFundo = localStorage.getItem(fundoKey);
+        const savedTexto = localStorage.getItem(corTextoKey);
+        
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        let isDarkMode = (savedTheme === 'dark') || (!savedTheme && prefersDark);
+        
+        // Aplica o tema visual no <body> (se o <body> já existir)
+        if (document.body) {
+            if (isDarkMode) {
+                document.body.classList.add('theme-escuro');
+            } else {
+                document.body.classList.remove('theme-escuro');
+            }
+        }
+        
+        // Aplica as cores via CSS Variables
+        const finalFundo = savedFundo || (isDarkMode ? '#121212' : fundoPadrao);
+        const finalTexto = savedTexto || (isDarkMode ? '#f0f0f0' : corTextoPadrao);
+
+        document.documentElement.style.setProperty('--cor-destaque', savedDestaque || corPadrao);
+        document.documentElement.style.setProperty('--cor-fundo-principal', finalFundo);
+        document.documentElement.style.setProperty('--cor-texto-principal', finalTexto);
+    }
+    
+    // Executa o carregamento de cores imediatamente
+    loadSettings();
+
+
+    // ===================================
+    // 3. FUNÇÕES DE FEEDBACK CORRIGIDAS
+    // (Estas substituem as funções antigas no body para respeitar as preferências)
+    // ===================================
+
+    function playClickSound() {
+        // Verifica se o som NÃO está explicitamente desativado ('false')
+        const isSomEnabled = localStorage.getItem(KEY_SOM) !== 'false';
+        
+        if (isSomEnabled) {
+            const soundClone = clickSound.cloneNode();
+            soundClone.volume = 0.5;
+            soundClone.play().catch(e => console.log("A reprodução do som foi impedida:", e));
+        }
+    }
+
+    function triggerHapticFeedback() {
+        // Verifica se a vibração NÃO está explicitamente desativada ('false')
+        const isVibracaoEnabled = localStorage.getItem(KEY_VIBRACAO) !== 'false';
+
+        if (navigator.vibrate && isVibracaoEnabled) {
+            navigator.vibrate(50); 
+        }
+    }
+    
+    // [O restante do seu script principal (DOMContentLoaded) deve vir aqui,
+    // garantindo que ele chame playClickSound() e triggerHapticFeedback()
+    // sempre que houver uma interação (ripple, toggle, etc.).]
+</script>
+
+    <style>
+        /*
+         * --------------------------------
+         * 0. Variáveis, Reset e Responsividade
+         * --------------------------------
+         */
+        
+        :root {
+            /* Base de Cores - Tema Claro */
+            --cor-fundo-principal: #eef2f5;
+            --cor-texto-principal: #1c274b; 
+            --cor-card-fundo: #ffffff;
+            --cor-destaque: #e91e63;
+            --cor-sombra: rgba(28, 39, 75, 0.15);
+            
+            /* Cores Glassmorphism */
+            --cor-glass-fundo: rgba(255, 255, 255, 0.25);
+            --cor-glass-borda: rgba(255, 255, 255, 0.7);
+            
+            /* Cores de Partículas Animadas (Tema Claro) */
+            --cor-particula-1: var(--cor-destaque);
+            --cor-particula-2: var(--cor-texto-principal); /* Azul claro para contraste no tema claro */
+            
+            /* Medidas e Animações */
+            --fonte-base: 16px;
+            --borda-raio: 1.5rem;
+            --duracao-animacao: 0.5s;
+            --sombra-padrao: 0 0.5rem 1.5rem var(--cor-sombra);
+        }
+
+        /* Tema Escuro */
+        .theme-escuro {
+            --cor-fundo-principal: #121212;
+            --cor-texto-principal: #f0f0f0;
+            --cor-card-fundo: #1e1e1e;
+            --cor-sombra: rgba(0, 0, 0, 0.5);
+            
+            /* Cores Glassmorphism */
+            --cor-glass-fundo: rgba(255, 255, 255, 0.05);
+            --cor-glass-borda: rgba(255, 255, 255, 0.15);
+            
+            /* Cores de Partículas Animadas (Tema Escuro) */
+            --cor-particula-1: var(--cor-destaque); 
+            --cor-particula-2: var(--cor-texto-principal); 
+        }
+
+        /* Reset Básico e Fonte */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        @font-face {
+            font-family: 'Nunito';
+            src: url('../assets/fontes/Nunito-VariableFont_wght.ttf') format('truetype');
+            font-weight: 100 900;
+        }
+
+        html {
+            font-size: var(--fonte-base);
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--cor-fundo-principal);
+            color: var(--cor-texto-principal);
+            min-height: 100vh; 
+            transition: background-color var(--duracao-animacao), color var(--duracao-animacao);
+            padding-top: 5rem;
+            padding-bottom: 7rem; 
+        }
+        body, .secao-personalizacao, .card-preview, .tema-pill {
+    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, transform 0.2s;
+}
+        
+        .container {
+            width: 100%;
+            max-width: 100%; 
+            margin: 0 auto;
+            padding: 1.5rem;
+            position: relative; 
+            z-index: 10;
+        }
+
+        /*
+         * --------------------------------
+         * 1. Fundo Animado (Partículas/Bolhas)
+         * --------------------------------
+         */
+        .fundo-animado {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1; 
+        }
+
+        .fundo-animado::before, .fundo-animado::after {
+            content: '';
+            position: absolute;
+            width: 15rem;
+            height: 15rem;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: flutuar 20s infinite ease-in-out;
+            pointer-events: none;
+        }
+
+        .fundo-animado::before {
+            background-color: var(--cor-particula-1); 
+            top: 10vh;
+            left: 5vw;
+        }
+
+        .fundo-animado::after {
+            background-color: var(--cor-particula-2); 
+            bottom: 15vh;
+            right: 5vw;
+            animation-delay: -10s;
+        }
+
+        @keyframes flutuar {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(15vw, 15vh) scale(1.1); }
+        }
+        /* FIM: Fundo Animado */
+
+        /* --------------------------------
+         * 2. Estilos Glassmorphism, Cabeçalho e Rodapé
+         * --------------------------------
+         */
+        .cabecalho-personalizacao {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 95%;
+            padding: 1rem 1.5rem;
+            background-color: var(--cor-fundo-principal);
+            box-shadow: 0 2px 10px var(--cor-sombra); 
+            z-index: 50;
+            border-radius: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .cabecalho-personalizacao h1 {
+            font-size: 1.75rem;
+            color: var(--cor-destaque);
+            font-weight: 800;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .btn-voltar {
+            background: none;
+            border: none;
+            color: var(--cor-texto-principal);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            z-index: 51; 
+            transition: all 0.2s;
+        }
+        
+        .secao-personalizacao {
+            background: var(--cor-glass-fundo);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--cor-glass-borda);
+            box-shadow: 0 0.5rem 2rem 0 rgba(31, 38, 135, 0.1);
+            padding: 1.5rem;
+            border-radius: var(--borda-raio);
+            margin-bottom: 1.5rem;
+        }
+
+        .secao-personalizacao h2 {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--cor-destaque);
+            margin-bottom: 0.75rem;
+            font-size: 1.5rem;
+        }
+
+        /* ... Estilos dos inputs, switch, e preview omitidos para brevidade ... */
+
+        /* Estilos de Presets de Cores */
+        .preset-cores {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .cor-amostra {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.1s, border-color 0.3s;
+        }
+        
+        .cor-amostra.selecionada {
+            border-color: var(--cor-texto-principal); 
+            box-shadow: 0 0 0 4px var(--cor-destaque);
+        }
+
+        .rodape-aplicar {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 35rem; 
+            padding: 1rem 1.5rem;
+            background: var(--cor-fundo-principal);
+            box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.1);
+            z-index: 40;
+        }
+
+        .btn-aplicar {
+            width: 100%;
+            padding: 1rem;
+            background-color: var(--cor-destaque);
+            color: white;
+            border: none;
+            border-radius: 1rem;
+            font-size: 1.2rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        
+        /* ... Estilos para o switch e inputs color/hex, e ripple ... */
+        .switch-container {display: flex;align-items: center;justify-content: space-between;padding: 0.75rem 0;border-top: 1px solid var(--cor-glass-borda);}
+        .switch {position: relative;display: inline-block;width: 60px;height: 34px;}
+        .switch input {opacity: 0;width: 0;height: 0;}
+        .slider {position: absolute;cursor: pointer;top: 0;left: 0;right: 0;bottom: 0;background-color: #ccc;transition: 0.4s;border-radius: 34px;}
+        .slider:before {position: absolute;content: "";height: 26px;width: 26px;left: 4px;bottom: 4px;background-color: white;transition: 0.4s;border-radius: 50%;}
+        input:checked + .slider {background-color: var(--cor-destaque);}
+        input:checked + .slider:before {transform: translateX(26px);}
+        
+        .input-color-wrapper {display: flex;align-items: center;gap: 1rem;background: var(--cor-card-fundo);border: 1px solid var(--cor-glass-borda);border-radius: 10px;padding: 0.5rem;}
+        .input-color-wrapper input[type="text"] {flex-grow: 1;padding: 0.5rem;border: none;background: transparent;font-family: 'Nunito', sans-serif;font-size: 1rem;color: var(--cor-texto-principal);outline: none;}
+        .input-color-wrapper input[type="color"] {-webkit-appearance: none;-moz-appearance: none;appearance: none;width: 50px;height: 50px;border: none;border-radius: 6px;cursor: pointer;padding: 0;overflow: hidden;background: none;}
+        .input-color-wrapper input[type="color"]::-webkit-color-swatch-wrapper {padding: 0;}
+        .input-color-wrapper input[type="color"]::-webkit-color-swatch {border: none;}
+        
+        .ripple {position: relative;overflow: hidden;}
+        .ripple-effect {position: absolute;border-radius: 50%;transform: scale(0);animation: ripple-anim 0.6s linear;background-color: rgba(255, 255, 255, 0.7);pointer-events: none;}
+        .theme-escuro .ripple-effect {background-color: rgba(255, 255, 255, 0.1);}
+        @keyframes ripple-anim {to {transform: scale(4);opacity: 0;}}
+
+        /* Card de Preview */
+        .card-preview {background: var(--cor-fundo-principal);box-shadow: var(--sombra-padrao);border-radius: var(--borda-raio);padding: 1.5rem;margin-top: 2rem;border: 1px solid var(--cor-destaque);transition: all 0.3s;}
+        .card-preview .titulo {font-size: 1.3rem;font-weight: 800;color: var(--cor-destaque);display: flex;align-items: center;gap: 0.5rem;margin-bottom: 1rem;}
+        .card-preview .frase {font-size: 1.1rem;font-style: italic;line-height: 1.4;color: var(--cor-texto-principal);}
+        .card-preview .autor {text-align: right;margin-top: 0.5rem;font-size: 0.9rem;opacity: 0.7;color: var(--cor-texto-principal);}
+        
+        /* ================== Geral e Reset ================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Nunito', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+:focus, :active, a:focus, a:active, button:focus, button:active, input:focus, input:active, select:focus, select:active, textarea:focus, textarea:active {
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+    .fas ,fa{
+    animation: pulse 3s infinite;
+    color: var(--cor-destaque);
+}
+
+    /* --- EFEITOS / ANIMAÇÕES --- */
+    .fade-out { animation:fadeOut 0.5s ease-in-out forwards; }
+    @keyframes fadeIn { from{opacity:0;transform:scale(0.9);} to{opacity:1;transform:scale(1);} }
+    @keyframes fadeOut { from{opacity:1;} to{opacity:0;visibility:hidden;} }
+    @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.08);} }
+    @keyframes bounce { 0%,80%,100%{transform:scale(0.8);} 40%{transform:scale(1.2);} }
+
+@keyframes brilho {
+    0% { text-shadow: 0 0 0.3rem #FFD700, 0 0 0.6rem #FFD700; }
+    50% { text-shadow: 0 0 1.2rem #FFD700, 0 0 2.4rem #FFD700; }
+    100% { text-shadow: 0 0 0.3rem #FFD700, 0 0 0.6rem #FFD700; }
+}
+/* Novos estilos para os Presets */
+.preset-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 1rem;
+}
+
+.tema-pill {
+    background: var(--cor-card-fundo);
+    border: 2px solid transparent;
+    border-radius: 50px;
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 0.9rem;
+    color: var(--cor-texto-principal);
+    box-shadow: 0 4px 6px var(--cor-sombra);
+}
+
+.tema-pill:active {
+    transform: scale(0.95);
+}
+
+.tema-pill.active {
+    border-color: var(--cor-destaque);
+    background: var(--cor-destaque);
+    color: white !important;
+}
+
+.dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+    </style>
+</head>
+
+<body>
+    <div class="fundo-animado"></div>
+
+    <header class="cabecalho-personalizacao">
+        <a href="index.html" class="btn-voltar ripple" aria-label="Voltar para a tela principal">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1><i class="fas fa-palette"></i>Personalização</h1>
+        <div style="width: 2.5rem;"></div> 
+    </header>
+
+    <div class="container">
+        
+        <div class="secao-personalizacao">
+            <h2><i class="fas fa-adjust"></i> Modo de Cores</h2>
+            <p>Alterne entre os modos claro e escuro. Salvo instantaneamente.</p>
+            <div class="switch-container">
+                <label for="theme-switch">Tema Escuro</label>
+                <label class="switch">
+                    <input type="checkbox" id="theme-switch">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+        
+        <div class="secao-personalizacao">
+            <h2><i class="fas fa-eye"></i> Visualização</h2>
+            <div class="card-preview" id="card-preview">
+                <div class="titulo">
+                    <i class="fas fa-star"></i> Frase de Exemplo
+                </div>
+                <div class="frase" id="preview-frase-texto">
+                    "A simplicidade é o último grau de sofisticação."
+                </div>
+                <div class="autor" id="preview-frase-autor">
+                    — Leonardo da Vinci
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="secao-personalizacao">
+    <h2><i class="fas fa-bolt"></i> Temas Rápidos</h2>
+    <p>Escolha uma combinação pronta de cores.</p>
+    <div class="preset-grid">
+        <div class="tema-pill" onclick="aplicarQuickTheme('padrao', event)"><span class="dot" style="background:#e91e63"></span> Rosa Padrão</div>
+        <div class="tema-pill" onclick="aplicarQuickTheme('royal', event)"><span class="dot" style="background:#f1c40f"></span> Royal Gold</div>
+        <div class="tema-pill" onclick="aplicarQuickTheme('dracula', event)"><span class="dot" style="background:#bd93f9"></span> Dracula</div>
+        
+        <div class="tema-pill" onclick="aplicarQuickTheme('cyber', event)"><span class="dot" style="background:#00f2ff"></span> Cyberpunk</div>
+       <div class="tema-pill" onclick="aplicarQuickTheme('deep', event)">
+    <span class="dot" style="background:#00d4ff"></span> Deep Ocean
+</div>
+        <div class="tema-pill" onclick="aplicarQuickTheme('blood', event)"><span class="dot" style="background:#ff0000"></span> Blood Red</div>
+
+        <div class="tema-pill" onclick="aplicarQuickTheme('forest', event)"><span class="dot" style="background:#2ecc71"></span> Floresta</div>
+        <div class="tema-pill" onclick="aplicarQuickTheme('ocean', event)"><span class="dot" style="background:#00b4d8"></span> Oceano</div>
+        <div class="tema-pill" onclick="aplicarQuickTheme('mint', event)"><span class="dot" style="background:#1abc9c"></span> Menta</div>
+
+        <div class="tema-pill" onclick="aplicarQuickTheme('candy', event)"><span class="dot" style="background:#ff85a2"></span> Candy</div>
+        <div class="tema-pill" onclick="aplicarQuickTheme('lavender', event)"><span class="dot" style="background:#a29bfe"></span> Lavanda</div>
+        <div class="tema-pill" onclick="aplicarQuickTheme('slate', event)"><span class="dot" style="background:#94a3b8"></span> Slate Night</div>
+        <div class="tema-pill" onclick="aplicarQuickTheme('sepia', event)"><span class="dot" style="background:#8c6239"></span> Sépia</div>
+        <div class="tema-pill" onclick="aplicarQuickTheme('minimal', event)"><span class="dot" style="background:#000000"></span> Minimal</div>
+    </div>
+</div>
+
+        <div class="secao-personalizacao">
+            <h2><i class="fas fa-palette"></i> Cor de Destaque</h2>
+            <p>Cor dos ícones, títulos e botões.</p>
+            
+            <div class="controle-cor-group">
+                <label>Cor Atual (HEX)</label>
+                <div class="input-color-wrapper">
+                    <input type="text" id="input-hex-destaque" maxlength="7" value="#e91e63">
+                    <input type="color" id="input-cor-destaque" value="#e91e63">
+                </div>
+            </div>
+        </div>
+        
+        <div class="secao-personalizacao">
+            <h2><i class="fas fa-fill-drip"></i> Cores Principais</h2>
+            <p>Altere as cores de fundo e dos texto do aplicativo.</p>
+
+            <div class="controle-cor-group">
+                <label for="input-cor-fundo">Cor de Fundo da Tela</label>
+                <div class="input-color-wrapper">
+                    <input type="text" id="input-hex-fundo" maxlength="7" value="#eef2f5">
+                    <input type="color" id="input-cor-fundo" value="#eef2f5">
+                </div>
+            </div>
+            
+            <div class="controle-cor-group">
+                <label for="input-cor-texto">Cor do Texto Principal</label>
+                <div class="input-color-wrapper">
+                    <input type="text" id="input-hex-texto" maxlength="7" value="#1c274b">
+                    <input type="color" id="input-cor-texto" value="#1c274b">
+                </div>
+            </div>
+        </div>
+        
+    </div>
+    
+    <div class="rodape-aplicar">
+        <button class="btn-aplicar ripple" id="btn-restaurar-padroes">
+            <i class="fas fa-undo-alt"></i> RESTAURAR PADRÕES
+        </button>
+    </div>
+        <script>
+
+    
+    // Estado Temporário (Pré-aplicação no preview)
+    let tempTheme = localStorage.getItem(themeKey) || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    let tempCorDestaque = localStorage.getItem(corKey) || corPadrao;
+    let tempCorFundo = localStorage.getItem(fundoKey) || fundoPadrao;
+    let tempCorTexto = localStorage.getItem(corTextoKey) || corTextoPadrao;
+    
+    // Elementos DOM
+    const dom = {
+        themeSwitch: document.getElementById('theme-switch'),
+        
+        inputCorDestaque: document.getElementById('input-cor-destaque'),
+        inputHexDestaque: document.getElementById('input-hex-destaque'),
+        presetCores: document.querySelectorAll('.cor-amostra'),
+        
+        inputCorFundo: document.getElementById('input-cor-fundo'),
+        inputHexFundo: document.getElementById('input-hex-fundo'),
+        
+        inputCorTexto: document.getElementById('input-cor-texto'),
+        inputHexTexto: document.getElementById('input-hex-texto'),
+        
+        btnRestaurar: document.getElementById('btn-restaurar-padroes'), 
+        
+        cardPreview: document.getElementById('card-preview'),
+        previewFrase: document.getElementById('preview-frase-texto'),
+        previewAutor: document.getElementById('preview-frase-autor')
+    };
+
+    /**
+     * Adiciona o efeito Ripple (onda de clique) ao elemento.
+     */
+    function applyRippleEffect(e) {
+        const target = e.currentTarget;
+        const rect = target.getBoundingClientRect();
+        
+        const oldRipple = target.querySelector('.ripple-effect');
+        if (oldRipple) {
+            oldRipple.remove();
+        }
+
+        const size = Math.max(rect.width, rect.height);
+        const x = e.clientX - rect.left - size / 2;
+        const y = e.clientY - rect.top - size / 2;
+
+        const newRipple = document.createElement('span');
+        newRipple.classList.add('ripple-effect');
+        
+        newRipple.style.width = newRipple.style.height = size + 'px';
+        newRipple.style.left = x + 'px';
+        newRipple.style.top = y + 'px';
+        
+        target.appendChild(newRipple);
+
+        newRipple.addEventListener('animationend', () => {
+            newRipple.remove();
+        });
+    }
+
+    // --------------------------------
+    // 3. Funções de Aplicação e Salvamento
+    // --------------------------------
+
+    function aplicarETravar(key, valor, varName = null) {
+        localStorage.setItem(key, valor);
+        if (varName) {
+            document.documentElement.style.setProperty(varName, valor);
+        }
+    }
+
+    function aplicarTemaVisual(theme) {
+        if (theme === 'dark') {
+            document.body.classList.add('theme-escuro');
+        } else {
+            document.body.classList.remove('theme-escuro');
+        }
+        dom.themeSwitch.checked = (theme === 'dark');
+    }
+
+    function updatePreviewColors() {
+        // Atualiza as variáveis CSS para o preview e para as partículas de fundo
+        document.documentElement.style.setProperty('--cor-destaque', tempCorDestaque);
+        document.documentElement.style.setProperty('--cor-fundo-principal', tempCorFundo);
+        document.documentElement.style.setProperty('--cor-texto-principal', tempCorTexto);
+        
+        // As variáveis --cor-particula-1 e --cor-particula-2 já usam as variáveis globais
+        // ou são atualizadas implicitamente pelo switch de tema no loadColors(false)
+    }
+    
+    // --------------------------------
+    // 4. Handlers de Eventos
+    // --------------------------------
+
+    function handleThemeToggle() {
+        triggerHapticFeedback();
+        playClickSound();
+        
+        tempTheme = dom.themeSwitch.checked ? 'dark' : 'light';
+        aplicarTemaVisual(tempTheme);
+        
+        aplicarETravar(themeKey, tempTheme);
+        
+        // Recarrega cores do fundo e texto para aplicar os defaults do novo tema
+        loadColors(false); 
+        updatePreviewColors();
+    }
+    
+    function handleColorChange(key, colorInput, hexInput) {
+        return (event) => {
+            let novaCor = event.target.value;
+            
+            if (!novaCor.startsWith('#') || (novaCor.length !== 7 && novaCor.length !== 4)) {
+                 if (event.target === hexInput && novaCor.match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i)) {
+                    novaCor = novaCor.startsWith('#') ? novaCor : '#' + novaCor;
+                 } else {
+                    return; 
+                 }
+            }
+
+            colorInput.value = novaCor;
+            hexInput.value = novaCor;
+            
+            let cssVar;
+            if (key === corKey) {
+                tempCorDestaque = novaCor;
+                cssVar = '--cor-destaque';
+                updatePresetSelection(novaCor);
+            } else if (key === fundoKey) {
+                tempCorFundo = novaCor;
+                cssVar = '--cor-fundo-principal';
+            } else if (key === corTextoKey) {
+                tempCorTexto = novaCor;
+                cssVar = '--cor-texto-principal';
+            }
+            
+            aplicarETravar(key, novaCor, cssVar);
+            updatePreviewColors();
+        };
+        
+        // Atualiza o Card de Preview especificamente
+const cardPreview = document.getElementById('card-preview');
+if (cardPreview) {
+    cardPreview.style.borderColor = t.d; // Borda da cor de destaque
+    cardPreview.style.backgroundColor = t.f; // Fundo do card igual ao fundo do app
+    
+    // Atualiza os textos dentro do preview
+    const txtFrase = document.getElementById('preview-frase-texto');
+    const txtAutor = document.getElementById('preview-frase-autor');
+    if(txtFrase) txtFrase.style.color = t.t;
+    if(txtAutor) txtAutor.style.color = t.t;
+}
+    }
+    
+    function handlePresetClick(event) {
+        applyRippleEffect(event); 
+        
+        const amostra = event.currentTarget;
+        const novaCor = amostra.getAttribute('data-cor');
+        
+        triggerHapticFeedback();
+        playClickSound();
+        
+        dom.inputCorDestaque.value = novaCor;
+        dom.inputHexDestaque.value = novaCor;
+        
+        tempCorDestaque = novaCor;
+        
+        aplicarETravar(corKey, novaCor, '--cor-destaque');
+        
+        updatePreviewColors();
+        updatePresetSelection(novaCor);
+    }
+    
+    function updatePresetSelection(cor) {
+        dom.presetCores.forEach(amostra => {
+            const corPreset = amostra.getAttribute('data-cor').toUpperCase();
+            const corAtual = cor.toUpperCase();
+            const corHex6 = (c) => c.length === 4 ? `#${c[1]}${c[1]}${c[2]}${c[2]}${c[3]}${c[3]}` : c;
+            
+            if (corHex6(corPreset) === corHex6(corAtual)) {
+                amostra.classList.add('selecionada');
+            } else {
+                amostra.classList.remove('selecionada');
+            }
+        });
+    }
+
+
+function handleRestaurarPadroes(event) {
+        // Mostra o modal primeiro
+        window.CustomModal.show({
+            titulo: "Restaurar Padrões?",
+            mensagem: "Todas as suas cores personalizadas e o tema serão resetados para o original. Deseja continuar?",
+            tipo: "confirm",
+            icone: "fa-undo-alt",
+            aoConfirmar: () => {
+                // REMOVIDO: applyRippleEffect(event) para evitar o erro de 'null'
+                
+                triggerHapticFeedback(40);
+                if (typeof playGlobalClick === 'function') playGlobalClick();
+                
+                // Limpeza dos dados
+                localStorage.removeItem(themeKey);
+                localStorage.removeItem(corKey);
+                localStorage.removeItem(fundoKey);
+                localStorage.removeItem(corTextoKey);
+                
+                // Reset das variáveis locais
+                tempTheme = 'light';
+                tempCorDestaque = corPadrao;
+                tempCorFundo = fundoPadrao;
+                tempCorTexto = corTextoPadrao;
+                
+                // Aplicação visual
+                aplicarTemaVisual(tempTheme);
+                if (typeof loadColors === 'function') loadColors(true); 
+                if (typeof updatePreviewColors === 'function') updatePreviewColors();
+                
+                // Feedback no botão físico (se ele ainda existir na DOM)
+                const btn = document.getElementById('btn-restaurar') || dom.btnRestaurar;
+                if (btn) {
+                    const originalHTML = btn.innerHTML;
+                    btn.innerHTML = `<i class="fas fa-check-double"></i> RESTAURADO!`;
+                    btn.classList.add('btn-sucesso-temp'); // Opcional: adicionar classe de cor via CSS
+                    
+                    setTimeout(() => {
+                        btn.innerHTML = originalHTML;
+                        btn.classList.remove('btn-sucesso-temp');
+                    }, 2000);
+                }
+            }
+        });
+    }
+
+
+    // --------------------------------
+    // 6. Inicialização e Carregamento
+    // --------------------------------
+    
+    function loadColors(updateTemp = true) {
+        
+        const isDark = dom.themeSwitch.checked;
+        const fundoDefault = isDark ? '#121212' : fundoPadrao;
+        const textoDefault = isDark ? '#f0f0f0' : corTextoPadrao;
+        
+        // Carrega Destaque
+        const savedDestaque = localStorage.getItem(corKey) || corPadrao;
+        if (updateTemp) tempCorDestaque = savedDestaque;
+        dom.inputCorDestaque.value = savedDestaque;
+        dom.inputHexDestaque.value = savedDestaque;
+        
+        // Carrega Fundo
+        const savedFundo = localStorage.getItem(fundoKey) || fundoDefault;
+        if (updateTemp) tempCorFundo = savedFundo;
+        dom.inputCorFundo.value = savedFundo;
+        dom.inputHexFundo.value = savedFundo;
+        
+        // Carrega Texto
+        const savedTexto = localStorage.getItem(corTextoKey) || textoDefault;
+        if (updateTemp) tempCorTexto = savedTexto;
+        dom.inputCorTexto.value = savedTexto;
+        dom.inputHexTexto.value = savedTexto;
+        
+        updatePreviewColors();
+        updatePresetSelection(savedDestaque);
+    }
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- 1. CARREGAMENTO INICIAL ---
+        // O loadSettings no <head> já fez a aplicação inicial, mas este loadColors garante a sincronização do DOM.
+        aplicarTemaVisual(tempTheme);
+        loadColors(true); 
+
+        // --- 2. LISTENERS DE TEMA ---
+        if (dom.themeSwitch) {
+            dom.themeSwitch.addEventListener('change', handleThemeToggle);
+        }
+        
+        // --- 3. LISTENERS DE COR DE DESTAQUE ---
+        if (dom.inputCorDestaque) {
+            dom.inputCorDestaque.addEventListener('input', handleColorChange(corKey, dom.inputCorDestaque, dom.inputHexDestaque));
+            dom.inputHexDestaque.addEventListener('input', handleColorChange(corKey, dom.inputCorDestaque, dom.inputHexDestaque));
+        }
+        dom.presetCores.forEach(amostra => {
+            amostra.addEventListener('click', handlePresetClick);
+        });
+
+        // --- 4. LISTENERS DE CORES PRINCIPAIS ---
+        if (dom.inputCorFundo) {
+            dom.inputCorFundo.addEventListener('input', handleColorChange(fundoKey, dom.inputCorFundo, dom.inputHexFundo));
+            dom.inputHexFundo.addEventListener('input', handleColorChange(fundoKey, dom.inputCorFundo, dom.inputHexFundo));
+        }
+
+        if (dom.inputCorTexto) {
+            dom.inputCorTexto.addEventListener('input', handleColorChange(corTextoKey, dom.inputCorTexto, dom.inputHexTexto));
+            dom.inputHexTexto.addEventListener('input', handleColorChange(corTextoKey, dom.inputCorTexto, dom.inputHexTexto));
+        }
+
+        // --- 5. LISTENERS DE AÇÃO ---
+        if (dom.btnRestaurar) {
+            dom.btnRestaurar.addEventListener('click', handleRestaurarPadroes);
+        }
+        
+        // Listener para o botão voltar, agora inclui o ripple
+        const btnVoltar = document.querySelector('.btn-voltar');
+        if (btnVoltar) {
+            btnVoltar.addEventListener('click', (e) => {
+                applyRippleEffect(e);
+                triggerHapticFeedback();
+                playClickSound();
+            });
+        }
+    });
+    
+const quickThemes = {
+    // --- CLÁSSICOS & ORIGINAIS ---
+    padrao:  { d: '#e91e63', f: '#eef2f5', t: '#1c274b', m: 'light', nome: 'Rosa Padrão' },
+    royal:   { d: '#f1c40f', f: '#1a1a1a', t: '#ffffff', m: 'dark',  nome: 'Royal Gold' },
+    dracula: { d: '#bd93f9', f: '#282a36', t: '#f8f8f2', m: 'dark',  nome: 'Dracula' },
+    
+    // --- MODERNOS & VIBRANTES ---
+    cyber:   { d: '#00f2ff', f: '#0a0a0f', t: '#ffffff', m: 'dark',  nome: 'Cyberpunk' },
+    deep: { d: '#00d4ff', f: '#001219', t: '#e9ecef', m: 'dark', nome: 'Deep Ocean' },
+    blood:   { d: '#ff0000', f: '#1a0000', t: '#ffffff', m: 'dark',  nome: 'Blood Red' },
+    
+    // --- NATUREZA & CALMA ---
+    forest:  { d: '#2ecc71', f: '#f0fff4', t: '#1b4332', m: 'light', nome: 'Floresta' },
+    ocean:   { d: '#00b4d8', f: '#caf0f8', t: '#03045e', m: 'light', nome: 'Oceano' },
+    mint:    { d: '#1abc9c', f: '#e0f2f1', t: '#004d40', m: 'light', nome: 'Menta' },
+    
+    // --- PASTÉIS & SOFT ---
+    candy:   { d: '#ff85a2', f: '#fff0f3', t: '#590d22', m: 'light', nome: 'Candy' },
+    lavender:{ d: '#a29bfe', f: '#f8f9ff', t: '#2d3436', m: 'light', nome: 'Lavanda' },
+    
+    // --- PROFISSIONAIS ---
+    slate:   { d: '#94a3b8', f: '#0f172a', t: '#f8fafc', m: 'dark',  nome: 'Slate Night' },
+    sepia:   { d: '#8c6239', f: '#f4ecd8', t: '#432918', m: 'light', nome: 'Sépia' },
+    minimal: { d: '#000000', f: '#ffffff', t: '#000000', m: 'light', nome: 'Minimal' }
+};
+
+
+function aplicarQuickTheme(key) {
+    const t = quickThemes[key];
+    if (!t) return;
+    
+    // Atualiza o Card de Preview especificamente
+const cardPreview = document.getElementById('card-preview');
+if (cardPreview) {
+    cardPreview.style.borderColor = t.d; // Borda da cor de destaque
+    cardPreview.style.backgroundColor = t.f; // Fundo do card igual ao fundo do app
+    
+    // Atualiza os textos dentro do preview
+    const txtFrase = document.getElementById('preview-frase-texto');
+    const txtAutor = document.getElementById('preview-frase-autor');
+    if(txtFrase) txtFrase.style.color = t.t;
+    if(txtAutor) txtAutor.style.color = t.t;
+}
+
+    // 1. Feedback tátil e sonoro (originais do seu código)
+    triggerHapticFeedback(); 
+    playClickSound();
+
+    // 2. Atualiza o Tema Visual (Body)
+    if (t.m === 'dark') {
+        document.body.classList.add('theme-escuro');
+        if(dom.themeSwitch) dom.themeSwitch.checked = true;
+    } else {
+        document.body.classList.remove('theme-escuro');
+        if(dom.themeSwitch) dom.themeSwitch.checked = false;
+    }
+
+    // 3. Atualiza as Variáveis CSS em tempo real
+    document.documentElement.style.setProperty('--cor-destaque', t.d);
+    document.documentElement.style.setProperty('--cor-fundo-principal', t.f);
+    document.documentElement.style.setProperty('--cor-texto-principal', t.t);
+    // Remove a classe 'active' de todas e adiciona apenas na clicada
+document.querySelectorAll('.tema-pill').forEach(p => p.classList.remove('active'));
+event.currentTarget.classList.add('active');
+
+    // 4. Sincroniza os inputs (para os seletores de cor mostrarem a cor do preset)
+    if(dom.inputCorDestaque) {
+        dom.inputCorDestaque.value = t.d;
+        dom.inputHexDestaque.value = t.d;
+        dom.inputCorFundo.value = t.f;
+        dom.inputHexFundo.value = t.f;
+        dom.inputCorTexto.value = t.t;
+        dom.inputHexTexto.value = t.t;
+    }
+
+    // 5. Salva permanentemente no LocalStorage
+    localStorage.setItem(themeKey, t.m);
+    localStorage.setItem(corKey, t.d);
+    localStorage.setItem(fundoKey, t.f);
+    localStorage.setItem(corTextoKey, t.t);
+}
+</script>
+    </body>
+</html>
