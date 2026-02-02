@@ -1,0 +1,328 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Assistente de Chat IA</title>
+    
+    <link href="assets/fontawesome/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/estilo-global.css">
+
+<script src="assets/js/config-global.js"></script>
+    
+    <script>
+    (function() {
+        // Busca a preferência salva (padrão 100% se não existir)
+        const fonteSalva = localStorage.getItem('appFontePerc') || '100';
+        
+        // Calcula o valor em pixels (16px * percentagem)
+        const tamanhoCalculado = (fonteSalva / 100) * 16;
+        
+        // Aplica imediatamente ao root antes da página renderizar (evita o "pulo" visual)
+        document.documentElement.style.setProperty('--fonte-base', tamanhoCalculado + 'px');
+    })();
+</script>
+    <script>
+        // --------------------------------
+        // VARIÁVEIS DE CONFIGURAÇÃO E DADOS
+        // --------------------------------
+        const themeKey = 'appTheme';
+        const corKey = 'appCorDestaque';
+        const fundoKey = 'appCorFundo';
+        const corTextoKey = 'appCorTexto';
+        
+        const KEY_VIBRACAO = 'prefVibracao';
+        const KEY_SOM = 'prefSomClique'; 
+        const KEY_HISTORICO = 'frasesHistorico'; 
+        
+        const corPadrao = '#e91e63'; 
+        const fundoPadrao = '#eef2f5'; 
+        const corTextoPadrao = '#1c274b'; 
+        
+        function loadSettings() {
+            const savedTheme = localStorage.getItem(themeKey);
+            const savedDestaque = localStorage.getItem(corKey);
+            const savedFundo = localStorage.getItem(fundoKey);
+            const savedTexto = localStorage.getItem(corTextoKey);
+            
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            let isDarkMode = (savedTheme === 'dark') || (!savedTheme && prefersDark);
+            
+            if (document.body) {
+                if (isDarkMode) {
+                    document.body.classList.add('theme-escuro');
+                } else {
+                    document.body.classList.remove('theme-escuro');
+                }
+            }
+            
+            const finalFundo = savedFundo || (isDarkMode ? '#121212' : fundoPadrao);
+            const finalTexto = savedTexto || (isDarkMode ? '#f0f0f0' : corTextoPadrao);
+
+            document.documentElement.style.setProperty('--cor-destaque', savedDestaque || corPadrao);
+            document.documentElement.style.setProperty('--cor-fundo-principal', finalFundo);
+            document.documentElement.style.setProperty('--cor-texto-principal', finalTexto);
+        }
+        
+        loadSettings();
+    </script>
+
+    <style>
+        /* ---------------------------- ESTILOS ---------------------------- */
+        @font-face {
+            font-family: 'Nunito';
+            src: url('assets/fontes/Nunito-VariableFont_wght.ttf') format('truetype');
+            font-weight: 100 900;
+        }
+
+        :root {
+            --cor-fundo-principal: #eef2f5; --cor-texto-principal: #1c274b; --cor-card-fundo: #ffffff; --cor-destaque: #e91e63;
+            --cor-sombra: rgba(28, 39, 75, 0.15); --cor-glass-fundo: rgba(255, 255, 255, 0.25); --cor-glass-borda: rgba(255, 255, 255, 0.7);
+            --cor-particula-1: var(--cor-destaque); --cor-particula-2: var(--cor-texto-principal); --fonte-base: 16px; --borda-raio: 1.5rem; --duracao-animacao: 0.5s;
+        }
+        .theme-escuro {
+            --cor-fundo-principal: #121212; --cor-texto-principal: #f0f0f0; --cor-card-fundo: #1e1e1e; --cor-sombra: rgba(0, 0, 0, 0.5);
+            --cor-glass-fundo: rgba(255, 255, 255, 0.05); --cor-glass-borda: rgba(255, 255, 255, 0.15); --cor-particula-1: var(--cor-destaque); 
+            --cor-particula-2: var(--cor-texto-principal); 
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { font-size: var(--fonte-base); }
+        body { font-family: 'Nunito', sans-serif; background-color: var(--cor-fundo-principal); color: var(--cor-texto-principal); min-height: 100vh; transition: background-color var(--duracao-animacao), color var(--duracao-animacao); padding-top: 5rem; padding-bottom: 5rem; }
+        
+        .container { 
+            width: 100%; max-width: 100%; margin: 0 auto; padding: 0 1rem; position: relative; z-index: 10; 
+            display: flex; flex-direction: column; min-height: calc(100vh - 5rem); 
+        }
+        
+        .fundo-animado { position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; z-index: -1; }
+        .fundo-animado::before, .fundo-animado::after { content: ''; position: absolute; width: 15rem; height: 15rem; border-radius: 50%; opacity: 0.3; animation: flutuar 20s infinite ease-in-out; pointer-events: none; }
+        .fundo-animado::before { background-color: var(--cor-particula-1); top: 10vh; left: 5vw; }
+        .fundo-animado::after { background-color: var(--cor-particula-2); bottom: 15vh; right: 5vw; animation-delay: -10s; }
+        @keyframes flutuar { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(15vw, 15vh) scale(1.1); } }
+        
+        .cabecalho-principal { display: flex; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 35rem; padding: 1rem 1.5rem; background-color: var(--cor-fundo-principal); box-shadow: 0 2px 10px var(--cor-sombra); z-index: 50; }
+        .cabecalho-principal h1 { font-size: 1.5rem; color: var(--cor-destaque); font-weight: 800; position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center;}
+        .cabecalho-principal h1 i {margin-right: 0.5rem;}
+        .btn-voltar { background: none; border: none; color: var(--cor-texto-principal); font-size: 1.5rem; cursor: pointer; padding: 0.5rem; border-radius: 50%; transition: all 0.2s; }
+
+        .ripple {position: relative;overflow: hidden;}
+        .ripple-effect {position: absolute;border-radius: 50%;transform: scale(0);animation: ripple-anim 0.6s linear;background-color: rgba(255, 255, 255, 0.7);pointer-events: none;}
+        .theme-escuro .ripple-effect {background-color: rgba(255, 255, 255, 0.1);}
+        @keyframes ripple-anim {to {transform: scale(4);opacity: 0;}}
+
+        .chat-window {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1rem 0;
+            width: 100%;
+            padding-bottom: 6rem; 
+        }
+
+        .chat-message { display: flex; max-width: 80%; margin-bottom: 1rem; position: relative; font-size: 0.95rem;
+        }
+        .chat-message p { padding: 0.75rem 1rem; border-radius: 1.25rem; line-height: 1.4; box-shadow: 0 2px 5px var(--cor-sombra); word-wrap: break-word; white-space: pre-wrap; }
+        .user-message { margin-left: auto; justify-content: flex-end; }
+        .user-message p { background-color: var(--cor-destaque); color: #ffffff; border-bottom-right-radius: 0.25rem; }
+        .ai-message { margin-right: auto; justify-content: flex-start; }
+        .ai-message p { background-color: var(--cor-card-fundo); color: var(--cor-texto-principal); border: 1px solid var(--cor-glass-borda); border-bottom-left-radius: 0.25rem; opacity: 0.95; 
+            
+            
+            
+                 /* Glassmorphism Efeito */
+    background: var(--cor-glass-fundo);
+    box-shadow: 0 0.5rem 2rem 0 rgba(31, 38, 135, 0.2);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-radius: var(--borda-raio);
+    border: 1px solid var(--cor-glass-borda);
+        }
+        .theme-escuro .ai-message p { background-color: var(--cor-card-fundo); }
+        .welcome-message { font-style: italic; opacity: 0.8; }
+        .typing p { background-color: rgba(128, 128, 128, 0.1); color: var(--cor-texto-principal); animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+        .input-area {
+            position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 100%; max-width: 35rem; padding: 0.75rem 1rem;
+            background-color: var(--cor-fundo-principal); box-shadow: 0 -2px 10px var(--cor-sombra);
+            display: flex; gap: 0.5rem; z-index: 60;
+        }
+
+        #input-chat-prompt { flex-grow: 1; padding: 0.75rem 1rem; border: 1px solid var(--cor-glass-borda); border-radius: 2rem; background-color: var(--cor-card-fundo); color: var(--cor-texto-principal); font-size: 1rem; transition: border-color 0.2s; 
+            
+            
+            
+                 /* Glassmorphism Efeito */
+    background: var(--cor-glass-fundo);
+    box-shadow: 0 0.5rem 2rem 0 rgba(31, 38, 135, 0.2);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-radius: var(--borda-raio);
+    border: 1px solid var(--cor-glass-borda);
+        }
+        #input-chat-prompt:focus { border-color: var(--cor-destaque); }
+        #btn-enviar-chat { width: 3rem; height: 3rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background-color: var(--cor-destaque); color: white; border: none; cursor: pointer; }
+        #btn-enviar-chat i { font-size: 1.25rem; color: var(--cor-card-fundo);}
+
+        .save-quote-button { position: absolute; bottom: -1.25rem; right: 0.5rem; background-color: var(--cor-card-fundo); border: 1px solid var(--cor-glass-borda); color: var(--cor-destaque); border-radius: 50%; width: 2rem; height: 2rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px var(--cor-sombra); cursor: pointer; transition: transform 0.2s; z-index: 10; }
+        .save-quote-button i { font-size: 0.9rem; }
+        .save-quote-button:hover { transform: scale(1.1); }
+        .ai-message.saved-quote .save-quote-button i { color: #f44336; font-weight: 900; }
+        
+        .fas{
+            color: var(--cor-destaque);
+        }
+        
+            .fas ,fa{
+    animation: pulse 3s infinite;
+}
+    
+        /* --- EFEITOS / ANIMAÇÕES --- */
+    .fade-out { animation:fadeOut 0.5s ease-in-out forwards; }
+    @keyframes fadeIn { from{opacity:0;transform:scale(0.9);} to{opacity:1;transform:scale(1);} }
+    @keyframes fadeOut { from{opacity:1;} to{opacity:0;visibility:hidden;} }
+    @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.2);} }
+    @keyframes bounce { 0%,80%,100%{transform:scale(0.8);} 40%{transform:scale(1.2);} }
+}
+        
+        /* ================== Geral e Reset ================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Nunito', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+:focus, :active, a:focus, a:active, button:focus, button:active, input:focus, input:active, select:focus, select:active, textarea:focus, textarea:active {
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+}
+    </style>
+
+</head>
+<body> 
+    <div class="fundo-animado"></div>
+
+    <header class="cabecalho-principal">
+        <button onclick="window.location.href = 'index.html'" class="btn-voltar ripple" aria-label="Voltar para Início">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h1 id="header-titulo"> <i class="fas fa-comments"></i>Assistente de IA</h1>
+        <div style="width: 2.5rem; visibility: hidden;"></div> 
+    </header>
+
+    <main class="container">
+        <section class="chat-window" id="chat-window">
+            <div class="chat-message ai-message welcome-message">
+                <p>Olá! Sou o Assistente de Frases do Coração. Peça-me para criar frases, poemas ou apenas converse.</p>
+                <button class="btn-acao-chat save-quote-button ripple" data-save-text="Olá! Sou o Assistente de Frases IA." style="display: none;">
+                    <i class="far fa-heart"></i>
+                </button>
+            </div>
+        </section>
+    </main>
+    
+    <div class="input-area">
+        <input type="text" id="input-chat-prompt" placeholder="Digite sua mensagem...">
+        <button id="btn-enviar-chat" class="btn-principal ripple">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+    
+<script>
+    const domChat = {
+        chatWindow: document.getElementById('chat-window'),
+        inputPrompt: document.getElementById('input-chat-prompt'),
+        btnEnviar: document.getElementById('btn-enviar-chat'),
+    };
+
+    function appendMessage(text, role, typing = false) {
+        if (typing) {
+            const temp = document.createElement('div');
+            temp.id = "typing-temp";
+            temp.className = 'chat-message ai-message typing';
+            temp.innerHTML = `<p>O Assistente está pensando...</p>`;
+            domChat.chatWindow.appendChild(temp);
+            return temp;
+        }
+
+        const div = document.createElement('div');
+        div.className = `chat-message ${role}-message`;
+        div.innerHTML = `<p>${text}</p>`;
+        
+        if (role === 'ai') {
+            const btn = document.createElement('button');
+            btn.className = 'save-quote-button ripple';
+            btn.innerHTML = '<i class="far fa-heart"></i>';
+            btn.onclick = () => {
+                let favs = JSON.parse(localStorage.getItem('frasesHistorico') || '[]');
+                favs.unshift({id: Date.now(), texto: text, autor: 'Assistente IA', categoria: 'Chat'});
+                localStorage.setItem('frasesHistorico', JSON.stringify(favs.slice(0,50)));
+                btn.innerHTML = '<i class="fas fa-heart"></i>';
+            };
+            div.appendChild(btn);
+        }
+        domChat.chatWindow.appendChild(div);
+        domChat.chatWindow.scrollTop = domChat.chatWindow.scrollHeight;
+    }
+
+    async function enviarMensagem() {
+    const userPrompt = domChat.inputPrompt.value.trim();
+    if (!userPrompt) return;
+
+    // Bloqueia o input para evitar cliques duplos
+    domChat.inputPrompt.value = '';
+    domChat.inputPrompt.disabled = true;
+    domChat.btnEnviar.disabled = true;
+
+    // Adiciona a mensagem do usuário na tela
+    appendMessage(userPrompt, 'user');
+
+    // Cria o indicador de "Pensando..."
+    const typingMessage = document.createElement('div');
+    typingMessage.classList.add('chat-message', 'ai-message', 'typing');
+    typingMessage.innerHTML = '<p>A processar sentimentos...</p>';
+    domChat.chatWindow.appendChild(typingMessage);
+    domChat.chatWindow.scrollTop = domChat.chatWindow.scrollHeight;
+
+    try {
+        // AQUI ESTÁ A MUDANÇA: Ligar ao teu Backend da Vercel
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: userPrompt })
+        });
+
+        if (!response.ok) throw new Error('Erro na resposta do servidor');
+
+        const data = await response.json();
+
+        // Remove o "Pensando..." e mostra a resposta real
+        appendMessage(data.resposta, 'ai', typingMessage);
+
+    } catch (error) {
+        if (typingMessage) typingMessage.remove();
+        appendMessage("Desculpa, o meu servidor de inspiração está em manutenção. Tenta novamente!", 'ai');
+        console.error("Erro:", error);
+    } finally {
+        domChat.inputPrompt.disabled = false;
+        domChat.btnEnviar.disabled = false;
+        domChat.inputPrompt.focus();
+    }
+}
+
+    domChat.btnEnviar.addEventListener('click', enviarMensagem);
+    domChat.inputPrompt.addEventListener('keypress', (e) => { if(e.key === 'Enter') enviarMensagem(); });
+</script>
+
+ </body>
+ </html>
