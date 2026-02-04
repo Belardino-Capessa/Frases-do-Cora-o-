@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "functions": {
+    "api/*.js": {
+      "runtime": "vercel-node@latest"
+    }
+  },
+  "routes": [
+    {
+      "src": "/API/(.*)",
+      "dest": "/API/$1.js",
+      "headers": {
+        "Access-Control-Allow-Origin": "*"
+      }
+    }
+  ]
+}
